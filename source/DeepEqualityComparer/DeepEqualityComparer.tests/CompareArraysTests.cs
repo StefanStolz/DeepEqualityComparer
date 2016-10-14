@@ -43,8 +43,8 @@ namespace deepequalitycomparer.tests
             var array1 = new[] { 1, 2, 3 };
             var array2 = new[] { 1, 2, 3, 4 };
 
-            Assert.That(DeepEqualityComparer.Equals(array1, array2), Is.False);
-            Assert.That(DeepEqualityComparer.Equals(array2, array1), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(array1, array2), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(array2, array1), Is.False);
         }
 
         [Test]
@@ -53,7 +53,7 @@ namespace deepequalitycomparer.tests
             var array1 = new[] { 1, 2, 3 };
             var array2 = new[] { 1, 2, 4 };
 
-            Assert.That(DeepEqualityComparer.Equals(array1, array2), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(array1, array2), Is.False);
         }
 
         [Test]
@@ -62,7 +62,7 @@ namespace deepequalitycomparer.tests
             var array1 = new[] { 1, 2, 3 };
             var array2 = new[] { 1, 2, 3 };
 
-            Assert.That(DeepEqualityComparer.Equals(array1, array2), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(array1, array2), Is.True);
         }
     }
 }

@@ -44,7 +44,7 @@ namespace deepequalitycomparer.tests
             var enumerable1 = this.GetIntegerEnumeration1();
             var enumerable2 = this.GetIntegerEnumeration3();
 
-            Assert.That(DeepEqualityComparer.Equals(enumerable1, enumerable2), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(enumerable1, enumerable2), Is.False);
         }
 
         [Test]
@@ -53,7 +53,7 @@ namespace deepequalitycomparer.tests
             var enumerable1 = this.GetIntegerEnumeration1();
             var enumerable2 = this.GetIntegerEnumeration2();
 
-            Assert.That(DeepEqualityComparer.Equals(enumerable1, enumerable2), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(enumerable1, enumerable2), Is.True);
         }
 
         private IEnumerable<int> GetIntegerEnumeration1()

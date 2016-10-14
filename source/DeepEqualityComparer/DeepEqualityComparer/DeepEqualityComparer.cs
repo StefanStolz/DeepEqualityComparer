@@ -36,12 +36,9 @@ using System.Reflection;
 
 namespace deepequalitycomparer
 {
-    public static class DeepEqualityComparer
+    public class DeepEqualityComparer : IEqualityComparer
     {
-        public static DeepEqualityComparer<T> Default<T>()
-        {
-            return DeepEqualityComparer<T>.Default;
-        }
+        internal static DeepEqualityComparer Default { get; } = new DeepEqualityComparer();
 
         /// <summary>
         /// Determines whether the specified objects are equal.
@@ -50,25 +47,20 @@ namespace deepequalitycomparer
         /// <param name="x">The first object of type T to compare.</param>
         /// <param name="y">The second object of type T to compare.</param>
         /// <returns>true if the specified objects are equal; otherwise, false.</returns>
-        public static bool Equals<T>(T x, T y)
+        public static bool AreEqual(object x, object y)
         {
-            return Default<T>().Equals(x, y);
+            return Default.Equals(x, y);
         }
-    }
-
-    public class DeepEqualityComparer<T> : IEqualityComparer<T>
-    {
-        internal static DeepEqualityComparer<T> Default { get; } = new DeepEqualityComparer<T>();
 
         /// <summary>
         /// Determines whether the specified objects are equal.
         /// </summary>
-        /// <param name="x">The first object of type T to compare.</param>
-        /// <param name="y">The second object of type T to compare.</param>
+        /// <param name="x">The first object to compare.</param>
+        /// <param name="y">The second object to compare.</param>
         /// <returns>true if the specified objects are equal; otherwise, false.</returns>
-        public bool Equals(T x, T y)
+        public bool Equals(object x, object y)
         {
-            return AreEqual(x, y);
+            return this.AreEqualInternal(x, y);
         }
 
         /// <summary>
@@ -77,12 +69,11 @@ namespace deepequalitycomparer
         /// <returns>
         /// Always returns 0 to force a full compare
         /// </returns>
-        /// <param name="obj">The <see cref="T:System.Object" /> for which a hash code is to be returned.</param>
         /// <exception cref="T:System.ArgumentNullException">
         /// The type of <paramref name="obj" /> is a reference type and
         /// <paramref name="obj" /> is null.
         /// </exception>
-        public int GetHashCode(T obj)
+        public int GetHashCode(object obj)
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
 
@@ -95,7 +86,7 @@ namespace deepequalitycomparer
         /// <param name="x">The first object</param>
         /// <param name="y">The second object</param>
         /// <returns><c>true</c> whether the specified objects are equal; otherwise false</returns>
-        internal bool AreEqual(object x, object y)
+        internal bool AreEqualInternal(object x, object y)
         {
             if (ReferenceEquals(x, y)) return true;
             if (ReferenceEquals(x, null)) return false;
@@ -213,7 +204,7 @@ namespace deepequalitycomparer
                     object valueOfX = propertyInfo.GetValue(x, null);
                     object valueOfY = propertyInfo.GetValue(y, null);
 
-                    if (!AreEqual(valueOfX, valueOfY))
+                    if (!this.AreEqualInternal(valueOfX, valueOfY))
                     {
                         return false;
                     }
@@ -253,7 +244,7 @@ namespace deepequalitycomparer
 
             for (int i = 0; i < x.Length; i++)
             {
-                if (!this.AreEqual(x.GetValue(i), y.GetValue(i))) return false;
+                if (!this.AreEqualInternal(x.GetValue(i), y.GetValue(i))) return false;
             }
 
             return true;

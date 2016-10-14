@@ -43,7 +43,7 @@ namespace deepequalitycomparer.tests
             var instance1 = new SomeType { Text = new string(new[] { 'T' }), Number = 12 };
             var instance2 = new SomeType { Text = new string(new[] { 'X' }), Number = 12 };
 
-            Assert.That(DeepEqualityComparer.Equals(instance1, instance2), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(instance1, instance2), Is.False);
         }
 
         [Test]
@@ -52,7 +52,7 @@ namespace deepequalitycomparer.tests
             var instance1 = new SomeType { Text = new string(new[] { 'T' }), Number = 12 };
             var instance2 = new SomeType { Text = new string(new[] { 'T' }), Number = 12 };
 
-            Assert.That(DeepEqualityComparer.Equals(instance1, instance2), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(instance1, instance2), Is.True);
         }
 
         private class SomeType

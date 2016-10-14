@@ -40,12 +40,12 @@ namespace deepequalitycomparer.tests
         [Test]
         public void CompareObjectReferences()
         {
-            Assert.That(DeepEqualityComparer.Equals(new object(), null), Is.False);
-            Assert.That(DeepEqualityComparer.Equals(null, new object()), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(new object(), null), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(null, new object()), Is.False);
 
             var obj = new object();
-            Assert.That(DeepEqualityComparer.Equals(obj, obj), Is.True);
-            Assert.That(DeepEqualityComparer.Equals<object>(null, null), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(obj, obj), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(null, null), Is.True);
         }
     }
 }

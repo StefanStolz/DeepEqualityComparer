@@ -13,7 +13,7 @@ namespace deepequalitycomparer.tests
             var text1 = new StringBuilder().Append("abcd").ToString();
             var text2 = new StringBuilder().Append("abcd").ToString();
 
-            Assert.That(DeepEqualityComparer.Equals(text1, text2), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(text1, text2), Is.True);
         }
 
         [Test]
@@ -22,7 +22,7 @@ namespace deepequalitycomparer.tests
             var text1 = new StringBuilder().Append("abcd").ToString();
             var text2 = new StringBuilder().Append("abce").ToString();
 
-            Assert.That(DeepEqualityComparer.Equals(text1, text2), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(text1, text2), Is.False);
         }
     }
 }
