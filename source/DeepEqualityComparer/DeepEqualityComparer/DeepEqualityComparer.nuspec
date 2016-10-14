@@ -9,7 +9,7 @@
     <licenseUrl>https://raw.githubusercontent.com/StefanStolz/DeepEqualityComparer/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/StefanStolz/DeepEqualityComparer</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>An IEqualityComparer implementation that performs a deep comparasion of objects.</description>
+    <description>Generic IEqualityComparer which performs a deep comparison of object trees</description>
     <releaseNotes>Initial release</releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>IEqualityComparer Comparer</tags>
