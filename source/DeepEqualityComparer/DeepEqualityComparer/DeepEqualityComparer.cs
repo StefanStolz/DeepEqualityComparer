@@ -30,6 +30,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 #endregion
 
@@ -105,9 +106,138 @@ namespace deepequalitycomparer
                 return this.AreArraysEqual((Array)x, (Array)y);
             }
 
+            if (AreBothPureIEnumerable(x, y))
+            {
+                return AreIEnumerablesEqual(x, y);
+            }
+
             if (!AreTypesEqual(x, y)) return false;
 
-            return x.Equals(y);
+            if (IsValueType(x))
+            {
+                return x.Equals(y);
+            }
+
+            if (HasTypeSpecificEuquals(x))
+            {
+                return AreEqualBySpecificEquals(x, y);
+            }
+
+            return ArePropertiesEqual(x, y);
+        }
+
+        private bool AreEqualBySpecificEquals(object x, object y)
+        {
+            var method = GetTypeSpecificEquals(x);
+
+            return (bool)method.Invoke(x, new[] { y });
+        }
+
+        private static bool HasTypeSpecificEuquals(object obj)
+        {
+            var method = GetTypeSpecificEquals(obj);
+
+            return method != null;
+        }
+
+        private static MethodInfo GetTypeSpecificEquals(object obj)
+        {
+            var type = obj.GetType();
+
+            var methods = type.GetMethods();
+
+            return methods.FirstOrDefault(x => x.Name.Equals("Equals") && obj.GetType() == x.GetParameters().SingleOrDefault()?.ParameterType);
+        }
+
+        private ArrayList MakeArrayList(object obj)
+        {
+            if (!IsIEnumerable(obj)) throw new ArithmeticException("obj must be an IEnumerable");
+
+            var enumerable = (IEnumerable)obj;
+
+            var result = new ArrayList();
+
+            foreach (var value in enumerable)
+            {
+                result.Add(value);
+            }
+
+            return result;
+        }
+
+        private bool AreIEnumerablesEqual(object x, object y)
+        {
+            var listX = this.MakeArrayList(x);
+            var listY = this.MakeArrayList(y);
+
+            return AreArraysEqual(listX.ToArray(), listY.ToArray());
+        }
+
+        private bool IsIEnumerable(object obj)
+        {
+            var isIEnumerable = obj.GetType().GetInterfaces().Any(i => i == typeof(IEnumerable));
+
+            return isIEnumerable;
+        }
+
+        private bool AreBothPureIEnumerable(object x, object y)
+        {
+            var propertiesOfX = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var propertiesOfY = y.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            if (propertiesOfX.Any() || propertiesOfY.Any()) return false;
+
+            var isXanIEnumerable = IsIEnumerable(x);
+            var ixYanIEnumerable = IsIEnumerable(y);
+
+            return isXanIEnumerable && ixYanIEnumerable;
+        }
+
+        private static bool IsValueType(object x)
+        {
+            return x.GetType().IsValueType;
+        }
+
+        private bool ArePropertiesEqual(object x, object y)
+        {
+            if (x.GetType() != y.GetType()) throw new ArgumentNullException(nameof(y), "y must have the same type as x");
+
+            var properties = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var propertyInfo in properties)
+            {
+                if (!propertyInfo.CanRead) continue;
+
+                if (!IsIndexer(propertyInfo))
+                {
+                    object valueOfX = propertyInfo.GetValue(x, null);
+                    object valueOfY = propertyInfo.GetValue(y, null);
+
+                    if (!AreEqual(valueOfX, valueOfY))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!AreIndexerEqual(propertyInfo, x, y))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
+        {
+            throw new NotSupportedException("Indexers are currently not supported");
+        }
+
+        private bool IsIndexer(PropertyInfo propertyInfo)
+        {
+            return propertyInfo.GetIndexParameters().Length > 0;
         }
 
         /// <summary>

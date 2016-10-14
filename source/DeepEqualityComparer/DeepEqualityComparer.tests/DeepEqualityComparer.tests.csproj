@@ -44,7 +44,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DeepEqualityComparerTests.cs" />
+    <Compile Include="CompareArraysTests.cs" />
+    <Compile Include="CompareCustomTypesTests.cs" />
+    <Compile Include="CompareEnumerablesTests.cs" />
+    <Compile Include="CompareStringsTests.cs" />
+    <Compile Include="CompareValueTypesTests.cs" />
+    <Compile Include="CompareObjectReferencesTests.cs" />
+    <Compile Include="ExplorationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
