@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>DeepEqualityComparer</id>
+    <version>1.0.0</version>
+    <authors>StefanStolz</authors>
+    <owners>StefanStolz</owners>
+    <title>DeepEqualityComparer</title>
+    <licenseUrl>https://raw.githubusercontent.com/StefanStolz/DeepEqualityComparer/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/StefanStolz/DeepEqualityComparer</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>An IEqualityComparer implementation that performs a deep comparasion of objects.</description>
+    <releaseNotes>Initial release</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>IEqualityComparer Comparer</tags>
+  </metadata>
+</package>
