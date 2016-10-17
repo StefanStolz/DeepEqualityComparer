@@ -40,6 +40,60 @@ namespace deepequalitycomparer
     {
         internal static DeepEqualityComparer Default { get; } = new DeepEqualityComparer();
 
+        internal class Context
+        {
+            private readonly List<Context> children = new List<Context>();
+
+            public Context(string caption)
+            {
+                if (string.IsNullOrWhiteSpace(caption)) throw new ArgumentException("Value cannot be null or whitespace.", nameof(caption));
+                this.Caption = caption;
+            }
+
+            public string Caption { get; }
+
+            public Context CreateChild(string childcaption)
+            {
+                var child = new Context(childcaption);
+                this.children.Add(child);
+                return child;
+            }
+
+            public bool Result { get; private set; }
+            public string ResultDescription { get; private set; }
+
+            public IEnumerable<Context> AllChildren()
+            {
+                foreach (var child in this.children)
+                {
+                    yield return child;
+
+                    foreach (var grandChild in child.AllChildren())
+                    {
+                        yield return grandChild;
+                    }
+                }
+            }
+
+            public void SetResult(bool equal, string description)
+            {
+                this.Result = equal;
+                this.ResultDescription = description;
+            }
+
+            public static bool AllChildrenEqual(Context context)
+            {
+                var all = context.AllChildren().ToArray();
+                return all.All(c => c.Result);
+            }
+
+            public static bool AllEqual(Context context)
+            {
+                var all = new[] {context}.Concat(context.AllChildren()).ToArray();
+                return all.All(c => c.Result);
+            }
+        }
+
         /// <summary>
         /// Determines whether the specified objects are equal.
         /// </summary>
@@ -60,7 +114,10 @@ namespace deepequalitycomparer
         /// <returns>true if the specified objects are equal; otherwise, false.</returns>
         public bool Equals(object x, object y)
         {
-            return this.AreEqualInternal(x, y);
+            var context = new Context("(root)");
+            this.AreEqualInternal(context, x, y);
+
+            return Context.AllEqual(context);
         }
 
         /// <summary>
@@ -86,35 +143,59 @@ namespace deepequalitycomparer
         /// <param name="x">The first object</param>
         /// <param name="y">The second object</param>
         /// <returns><c>true</c> whether the specified objects are equal; otherwise false</returns>
-        internal bool AreEqualInternal(object x, object y)
+        private void AreEqualInternal(Context context, object x, object y)
         {
-            if (ReferenceEquals(x, y)) return true;
-            if (ReferenceEquals(x, null)) return false;
-            if (ReferenceEquals(y, null)) return false;
+            if (ReferenceEquals(x, y))
+            {
+                context.SetResult(true, "Equal Reference");
+                return;
+            }
+            if (ReferenceEquals(x, null))
+            {
+                context.SetResult(false, "x == null");
+                return;
+            }
+            if (ReferenceEquals(y, null))
+            {
+                context.SetResult(false, "y == null");
+                return;
+            }
 
             if (AreBothArrays(x, y))
             {
-                return this.AreArraysEqual((Array)x, (Array)y);
+                var value = this.AreArraysEqual(context, (Array)x, (Array)y);
+                context.SetResult(value, "Array");
+                return;
             }
 
             if (AreBothPureIEnumerable(x, y))
             {
-                return AreIEnumerablesEqual(x, y);
+                var value = AreIEnumerablesEqual(context, x, y);
+                context.SetResult(value, "IEnumerable");
+                return;
             }
 
-            if (!AreTypesEqual(x, y)) return false;
+            if (!AreTypesEqual(x, y))
+            {
+                context.SetResult(false, "Types not equal");
+                return;
+            }
 
             if (IsValueType(x))
             {
-                return x.Equals(y);
+                var value = x.Equals(y);
+                context.SetResult(value, "Valuetype");
+                return;
             }
 
             if (HasTypeSpecificEuquals(x))
             {
-                return AreEqualBySpecificEquals(x, y);
+                var value = AreEqualBySpecificEquals(x, y);
+                context.SetResult(value, "Equals");
+                return;
             }
 
-            return ArePropertiesEqual(x, y);
+            ArePropertiesEqual(context, x, y);
         }
 
         private bool AreEqualBySpecificEquals(object x, object y)
@@ -156,12 +237,12 @@ namespace deepequalitycomparer
             return result;
         }
 
-        private bool AreIEnumerablesEqual(object x, object y)
+        private bool AreIEnumerablesEqual(Context context, object x, object y)
         {
             var listX = this.MakeArrayList(x);
             var listY = this.MakeArrayList(y);
 
-            return AreArraysEqual(listX.ToArray(), listY.ToArray());
+            return AreArraysEqual(context, listX.ToArray(), listY.ToArray());
         }
 
         private bool IsIEnumerable(object obj)
@@ -189,7 +270,7 @@ namespace deepequalitycomparer
             return x.GetType().IsValueType;
         }
 
-        private bool ArePropertiesEqual(object x, object y)
+        private void ArePropertiesEqual(Context context, object x, object y)
         {
             if (x.GetType() != y.GetType()) throw new ArgumentNullException(nameof(y), "y must have the same type as x");
 
@@ -204,21 +285,18 @@ namespace deepequalitycomparer
                     object valueOfX = propertyInfo.GetValue(x, null);
                     object valueOfY = propertyInfo.GetValue(y, null);
 
-                    if (!this.AreEqualInternal(valueOfX, valueOfY))
-                    {
-                        return false;
-                    }
+                    this.AreEqualInternal(context.CreateChild(propertyInfo.Name), valueOfX, valueOfY);
                 }
                 else
                 {
                     if (!AreIndexerEqual(propertyInfo, x, y))
                     {
-                        return false;
+                        throw new NotImplementedException();
                     }
                 }
             }
 
-            return true;
+            context.SetResult(Context.AllChildrenEqual(context), "Properties");
         }
 
         private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
@@ -237,17 +315,17 @@ namespace deepequalitycomparer
         /// <param name="x">The first Array</param>
         /// <param name="y">The second Array</param>
         /// <returns></returns>
-        private bool AreArraysEqual(Array x, Array y)
+        private bool AreArraysEqual(Context context, Array x, Array y)
         {
             if (x.Length !=
                 y.Length) return false;
 
             for (int i = 0; i < x.Length; i++)
             {
-                if (!this.AreEqualInternal(x.GetValue(i), y.GetValue(i))) return false;
+                this.AreEqualInternal(context.CreateChild($"[{i}]"), x.GetValue(i), y.GetValue(i));
             }
 
-            return true;
+            return Context.AllChildrenEqual(context);
         }
 
         /// <summary>
