@@ -35,7 +35,7 @@ using NUnit.Framework;
 namespace deepequalitycomparer.tests
 {
     [TestFixture]
-    public sealed class CompareCustomTypesTests
+    public sealed class CompareComplexTypesTests
     {
         [Test]
         public void CompareDifferentInstancesOfTypesWithoutEquals()
@@ -53,6 +53,15 @@ namespace deepequalitycomparer.tests
             var instance2 = new SomeType { Text = new string(new[] { 'T' }), Number = 12 };
 
             Assert.That(DeepEqualityComparer.AreEqual(instance1, instance2), Is.True);
+        }
+
+        [Test]
+        public void CompareWithLogging()
+        {
+            var instance1 = new SomeType { Text = new string(new[] { 'T' }), Number = 12 };
+            var instance2 = new SomeType { Text = new string(new[] { 'X' }), Number = 12 };
+
+            Assert.That(instance1, Is.Not.EqualTo(instance2).Using(DeepEqualityComparer.DefaultWithConsoleOutput));
         }
 
         private class SomeType

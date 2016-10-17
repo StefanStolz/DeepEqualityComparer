@@ -45,7 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompareArraysTests.cs" />
-    <Compile Include="CompareCustomTypesTests.cs" />
+    <Compile Include="CompareComplexTypesTests.cs" />
     <Compile Include="CompareEnumerablesTests.cs" />
     <Compile Include="CompareStringsTests.cs" />
     <Compile Include="CompareValueTypesTests.cs" />
