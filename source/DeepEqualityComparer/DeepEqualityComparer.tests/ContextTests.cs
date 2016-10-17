@@ -27,7 +27,7 @@
 #region using directives
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 
 using NUnit.Framework;
 
@@ -36,45 +36,43 @@ using NUnit.Framework;
 namespace deepequalitycomparer.tests
 {
     [TestFixture]
-    public sealed class CompareEnumerablesTests
+    public sealed class ContextTests
     {
         [Test]
-        public void CompareDifferentEnumerables()
+        public void AllEqual()
         {
-            var enumerable1 = this.GetIntegerEnumeration1();
-            var enumerable2 = this.GetIntegerEnumeration3();
+            var root = new DeepEqualityComparer.Context("(root)");
+            root.SetResult(true, "shibby");
 
-            Assert.That(DeepEqualityComparer.AreEqual(enumerable1, enumerable2), Is.False);
+            for (int i = 0; i < 10; i++)
+            {
+                var child = root.CreateChild($"[{i}]");
+                child.SetResult(true, "xxxx");
+
+                for (int j = 0; j < 20; j++)
+                {
+                    child.CreateChild($"XXX {j}").SetResult(true, "yyy");
+                }
+            }
+
+            Assert.That(DeepEqualityComparer.Context.AllEqual(root), Is.True);
         }
 
         [Test]
-        public void CompareEqualEnumerables()
+        public void GetAllChildren()
         {
-            var enumerable1 = this.GetIntegerEnumeration1();
-            var enumerable2 = this.GetIntegerEnumeration2();
+            var root = new DeepEqualityComparer.Context("x");
 
-            Assert.That(DeepEqualityComparer.AreEqual(enumerable1, enumerable2), Is.True);
-        }
+            var parent = root;
 
-        private IEnumerable<int> GetIntegerEnumeration1()
-        {
-            yield return 1;
-            yield return 2;
-            yield return 3;
-        }
+            for (int i = 0; i < 10; i++)
+            {
+                parent = parent.CreateChild($"{i}");
+            }
 
-        private IEnumerable<int> GetIntegerEnumeration2()
-        {
-            yield return 1;
-            yield return 2;
-            yield return 3;
-        }
+            var all = root.GetAllChildren().ToArray();
 
-        private IEnumerable<int> GetIntegerEnumeration3()
-        {
-            yield return 1;
-            yield return 4;
-            yield return 6;
+            Assert.That(all.Length, Is.EqualTo(10));
         }
     }
 }

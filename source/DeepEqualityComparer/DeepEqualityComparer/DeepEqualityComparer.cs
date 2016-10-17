@@ -27,8 +27,10 @@
 #region using directives
 
 using System;
+using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -36,94 +38,84 @@ using System.Reflection;
 
 namespace deepequalitycomparer
 {
-    public static class DeepEqualityComparer
+    public class DeepEqualityComparer : IEqualityComparer
     {
-        public static DeepEqualityComparer<T> Default<T>()
+        public static DeepEqualityComparer Default { get; } = new DeepEqualityComparer();
+
+        public static DeepEqualityComparer DefaultWithConsoleOutput => new DeepEqualityComparer(Console.Out);
+
+        private readonly TextWriter logingTarget;
+
+        private DeepEqualityComparer()
+        {}
+
+        public DeepEqualityComparer(TextWriter logingTarget)
         {
-            return DeepEqualityComparer<T>.Default;
+            if (logingTarget == null) throw new ArgumentNullException(nameof(logingTarget));
+            this.logingTarget = logingTarget;
+        }
+
+        internal void PrintResult(Context context)
+        {
+            if (this.logingTarget == null) return;
+
+            using (var tw = new IndentedTextWriter(this.logingTarget, "  "))
+            {
+                tw.Indent = 0;
+                this.PrintItem(tw, context);
+                this.PrintItems(tw, context.GetAllChildren());
+            }
+        }
+
+        private void PrintItems(IndentedTextWriter textWriter, IEnumerable<Context> items)
+        {
+            textWriter.Indent += 1;
+            foreach (var item in items)
+            {
+                this.PrintItem(textWriter, item);
+                this.PrintItems(textWriter, item.GetAllChildren());
+            }
+            textWriter.Indent -= 1;
+        }
+
+        private void PrintItem(TextWriter textWriter, Context context)
+        {
+            var itemEqual = context.Result?"equal": "not equal";
+            textWriter.WriteLine($"{context.Caption}: {itemEqual}");
         }
 
         /// <summary>
-        /// Determines whether the specified objects are equal.
+        /// Tests whether the specified arrays are equal
         /// </summary>
-        /// <typeparam name="T">The Type of the objects to compare.</typeparam>
-        /// <param name="x">The first object of type T to compare.</param>
-        /// <param name="y">The second object of type T to compare.</param>
-        /// <returns>true if the specified objects are equal; otherwise, false.</returns>
-        public static bool Equals<T>(T x, T y)
+        /// <param name="context">The Context of the equal operation</param>
+        /// <param name="x">The first Array</param>
+        /// <param name="y">The second Array</param>
+        /// <returns></returns>
+        private bool AreArraysEqual(Context context, Array x, Array y)
         {
-            return Default<T>().Equals(x, y);
-        }
-    }
+            if (x.Length !=
+                y.Length) return false;
 
-    public class DeepEqualityComparer<T> : IEqualityComparer<T>
-    {
-        internal static DeepEqualityComparer<T> Default { get; } = new DeepEqualityComparer<T>();
+            for (int i = 0; i < x.Length; i++)
+            {
+                this.AreEqualInternal(context.CreateChild($"[{i}]"), x.GetValue(i), y.GetValue(i));
+            }
 
-        /// <summary>
-        /// Determines whether the specified objects are equal.
-        /// </summary>
-        /// <param name="x">The first object of type T to compare.</param>
-        /// <param name="y">The second object of type T to compare.</param>
-        /// <returns>true if the specified objects are equal; otherwise, false.</returns>
-        public bool Equals(T x, T y)
-        {
-            return AreEqual(x, y);
+            return Context.AllChildrenEqual(context);
         }
 
-        /// <summary>
-        /// Always returns 0 to force a full compare
-        /// </summary>
-        /// <returns>
-        /// Always returns 0 to force a full compare
-        /// </returns>
-        /// <param name="obj">The <see cref="T:System.Object" /> for which a hash code is to be returned.</param>
-        /// <exception cref="T:System.ArgumentNullException">
-        /// The type of <paramref name="obj" /> is a reference type and
-        /// <paramref name="obj" /> is null.
-        /// </exception>
-        public int GetHashCode(T obj)
+        private bool AreBothPureIEnumerable(object x, object y)
         {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            var propertiesOfX = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var propertiesOfY = y.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-            return 0;
-        }
+            if (propertiesOfX.Any() ||
+                propertiesOfY.Any()) return false;
 
-        /// <summary>
-        /// Tests two objects recursive for equality
-        /// </summary>
-        /// <param name="x">The first object</param>
-        /// <param name="y">The second object</param>
-        /// <returns><c>true</c> whether the specified objects are equal; otherwise false</returns>
-        internal bool AreEqual(object x, object y)
-        {
-            if (ReferenceEquals(x, y)) return true;
-            if (ReferenceEquals(x, null)) return false;
-            if (ReferenceEquals(y, null)) return false;
+            var isXanIEnumerable = IsIEnumerable(x);
+            var ixYanIEnumerable = IsIEnumerable(y);
 
-            if (AreBothArrays(x, y))
-            {
-                return this.AreArraysEqual((Array)x, (Array)y);
-            }
-
-            if (AreBothPureIEnumerable(x, y))
-            {
-                return AreIEnumerablesEqual(x, y);
-            }
-
-            if (!AreTypesEqual(x, y)) return false;
-
-            if (IsValueType(x))
-            {
-                return x.Equals(y);
-            }
-
-            if (HasTypeSpecificEuquals(x))
-            {
-                return AreEqualBySpecificEquals(x, y);
-            }
-
-            return ArePropertiesEqual(x, y);
+            return isXanIEnumerable && ixYanIEnumerable;
         }
 
         private bool AreEqualBySpecificEquals(object x, object y)
@@ -133,20 +125,151 @@ namespace deepequalitycomparer
             return (bool)method.Invoke(x, new[] { y });
         }
 
-        private static bool HasTypeSpecificEuquals(object obj)
+        /// <summary>
+        /// Tests two objects recursive for equality
+        /// </summary>
+        /// <param name="context">The Context of the equal operation</param>
+        /// <param name="x">The first object</param>
+        /// <param name="y">The second object</param>
+        private void AreEqualInternal(Context context, object x, object y)
         {
-            var method = GetTypeSpecificEquals(obj);
+            context.SetPrintableValues(GetPrintableValue(x), GetPrintableValue(y));
 
-            return method != null;
+            if (ReferenceEquals(x, y))
+            {
+                context.SetResult(true, "Equal Reference");
+                return;
+            }
+            if (ReferenceEquals(x, null))
+            {
+                context.SetResult(false, "x == null");
+                return;
+            }
+            if (ReferenceEquals(y, null))
+            {
+                context.SetResult(false, "y == null");
+                return;
+            }
+
+            if (AreBothArrays(x, y))
+            {
+                var value = this.AreArraysEqual(context, (Array)x, (Array)y);
+                context.SetResult(value, "Array");
+                return;
+            }
+
+            if (AreBothPureIEnumerable(x, y))
+            {
+                var value = AreIEnumerablesEqual(context, x, y);
+                context.SetResult(value, "IEnumerable");
+                return;
+            }
+
+            if (!AreTypesEqual(x, y))
+            {
+                context.SetResult(false, "Types not equal");
+                return;
+            }
+
+            if (IsValueType(x))
+            {
+                var value = x.Equals(y);
+                context.SetResult(value, "Valuetype");
+                return;
+            }
+
+            if (HasTypeSpecificEuquals(x))
+            {
+                var value = AreEqualBySpecificEquals(x, y);
+                context.SetResult(value, "Equals");
+                return;
+            }
+
+            ArePropertiesEqual(context, x, y);
         }
 
-        private static MethodInfo GetTypeSpecificEquals(object obj)
+        private string GetPrintableValue(object obj)
         {
-            var type = obj.GetType();
+            if (object.ReferenceEquals(obj, null)) return "(null)";
 
-            var methods = type.GetMethods();
+            if (IsArray(obj))
+            {
+                return "(array)";
+            }
 
-            return methods.FirstOrDefault(x => x.Name.Equals("Equals") && obj.GetType() == x.GetParameters().SingleOrDefault()?.ParameterType);
+            if (IsIEnumerable(obj))
+            {
+                return "(IEnumerable)";
+            }
+
+            return obj.ToString();
+        }
+
+        private bool AreIEnumerablesEqual(Context context, object x, object y)
+        {
+            var listX = this.MakeArrayList(x);
+            var listY = this.MakeArrayList(y);
+
+            return AreArraysEqual(context, listX.ToArray(), listY.ToArray());
+        }
+
+        private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
+        {
+            throw new NotSupportedException("Indexers are currently not supported");
+        }
+
+        /// <summary>
+        /// Tests all Properties of the objects for euqality.
+        /// </summary>
+        /// <param name="context">The Context of the equal operation</param>
+        /// <param name="x">The first object</param>
+        /// <param name="y">The second object</param>
+        private void ArePropertiesEqual(Context context, object x, object y)
+        {
+            if (x.GetType() != y.GetType()) throw new ArgumentNullException(nameof(y), "y must have the same type as x");
+
+            var properties = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var propertyInfo in properties)
+            {
+                if (!propertyInfo.CanRead) continue;
+
+                if (!IsIndexer(propertyInfo))
+                {
+                    object valueOfX = propertyInfo.GetValue(x, null);
+                    object valueOfY = propertyInfo.GetValue(y, null);
+
+                    this.AreEqualInternal(context.CreateChild(propertyInfo.Name), valueOfX, valueOfY);
+                }
+                else
+                {
+                    if (!AreIndexerEqual(propertyInfo, x, y))
+                    {
+                        throw new NotImplementedException();
+                    }
+                }
+            }
+
+            context.SetResult(Context.AllChildrenEqual(context), "Properties");
+        }
+
+        /// <summary>
+        /// Tests whether the specified object implements <see cref="IEnumerable" />.
+        /// </summary>
+        /// <param name="obj">The object to test.</param>
+        /// <returns>
+        /// <c>true</c> whether <paramref name="obj" /> implements <see cref="IEnumerable" />; otherwise <c>false</c>
+        /// </returns>
+        private bool IsIEnumerable(object obj)
+        {
+            var isIEnumerable = obj.GetType().GetInterfaces().Any(i => i == typeof(IEnumerable));
+
+            return isIEnumerable;
+        }
+
+        private bool IsIndexer(PropertyInfo propertyInfo)
+        {
+            return propertyInfo.GetIndexParameters().Length > 0;
         }
 
         private ArrayList MakeArrayList(object obj)
@@ -165,98 +288,65 @@ namespace deepequalitycomparer
             return result;
         }
 
-        private bool AreIEnumerablesEqual(object x, object y)
+        /// <summary>
+        /// Determines whether the specified objects are equal.
+        /// </summary>
+        /// <param name="x">The first object to compare.</param>
+        /// <param name="y">The second object to compare.</param>
+        /// <returns>true if the specified objects are equal; otherwise, false.</returns>
+        public bool Equals(object x, object y)
         {
-            var listX = this.MakeArrayList(x);
-            var listY = this.MakeArrayList(y);
+            var context = new Context("(root)");
+            this.AreEqualInternal(context, x, y);
 
-            return AreArraysEqual(listX.ToArray(), listY.ToArray());
-        }
+            this.PrintResult(context);
 
-        private bool IsIEnumerable(object obj)
-        {
-            var isIEnumerable = obj.GetType().GetInterfaces().Any(i => i == typeof(IEnumerable));
-
-            return isIEnumerable;
-        }
-
-        private bool AreBothPureIEnumerable(object x, object y)
-        {
-            var propertiesOfX = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var propertiesOfY = y.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            if (propertiesOfX.Any() || propertiesOfY.Any()) return false;
-
-            var isXanIEnumerable = IsIEnumerable(x);
-            var ixYanIEnumerable = IsIEnumerable(y);
-
-            return isXanIEnumerable && ixYanIEnumerable;
-        }
-
-        private static bool IsValueType(object x)
-        {
-            return x.GetType().IsValueType;
-        }
-
-        private bool ArePropertiesEqual(object x, object y)
-        {
-            if (x.GetType() != y.GetType()) throw new ArgumentNullException(nameof(y), "y must have the same type as x");
-
-            var properties = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (var propertyInfo in properties)
-            {
-                if (!propertyInfo.CanRead) continue;
-
-                if (!IsIndexer(propertyInfo))
-                {
-                    object valueOfX = propertyInfo.GetValue(x, null);
-                    object valueOfY = propertyInfo.GetValue(y, null);
-
-                    if (!AreEqual(valueOfX, valueOfY))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    if (!AreIndexerEqual(propertyInfo, x, y))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
-        {
-            throw new NotSupportedException("Indexers are currently not supported");
-        }
-
-        private bool IsIndexer(PropertyInfo propertyInfo)
-        {
-            return propertyInfo.GetIndexParameters().Length > 0;
+            return Context.AllEqual(context);
         }
 
         /// <summary>
-        /// Tests whether the specified arrays are equal
+        /// Always returns 0 to force a full compare
         /// </summary>
-        /// <param name="x">The first Array</param>
-        /// <param name="y">The second Array</param>
-        /// <returns></returns>
-        private bool AreArraysEqual(Array x, Array y)
+        /// <returns>
+        /// Always returns 0 to force a full compare
+        /// </returns>
+        /// <exception cref="T:System.ArgumentNullException">
+        /// The type of <paramref name="obj" /> is a reference type and
+        /// <paramref name="obj" /> is null.
+        /// </exception>
+        public int GetHashCode(object obj)
         {
-            if (x.Length !=
-                y.Length) return false;
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
 
-            for (int i = 0; i < x.Length; i++)
-            {
-                if (!this.AreEqual(x.GetValue(i), y.GetValue(i))) return false;
-            }
+            return 0;
+        }
 
-            return true;
+        private static bool IsArray(object obj)
+        {
+            return obj.GetType().IsArray;
+        }
+
+        /// <summary>
+        /// Tests whether the specified objects are arrays.
+        /// </summary>
+        /// <param name="x">The first object</param>
+        /// <param name="y">The second object</param>
+        /// <returns><c>true</c> whether both objects are arrays; otherwise <c>false</c></returns>
+        private static bool AreBothArrays(object x, object y)
+        {
+            return IsArray(x) && IsArray(y);
+        }
+
+        /// <summary>
+        /// Determines whether the specified objects are equal.
+        /// </summary>
+        /// <typeparam name="T">The Type of the objects to compare.</typeparam>
+        /// <param name="x">The first object of type T to compare.</param>
+        /// <param name="y">The second object of type T to compare.</param>
+        /// <returns>true if the specified objects are equal; otherwise, false.</returns>
+        public static bool AreEqual(object x, object y)
+        {
+            return Default.Equals(x, y);
         }
 
         /// <summary>
@@ -270,15 +360,94 @@ namespace deepequalitycomparer
             return x.GetType() == y.GetType();
         }
 
-        /// <summary>
-        /// Tests whether the specified objects are arrays.
-        /// </summary>
-        /// <param name="x">The first object</param>
-        /// <param name="y">The second object</param>
-        /// <returns><c>true</c> whether both objects are arrays; otherwise <c>false</c></returns>
-        private static bool AreBothArrays(object x, object y)
+        private static MethodInfo GetTypeSpecificEquals(object obj)
         {
-            return x.GetType().IsArray && y.GetType().IsArray;
+            var type = obj.GetType();
+
+            var methods = type.GetMethods();
+
+            return
+                methods.FirstOrDefault(x => x.Name.Equals("Equals") && obj.GetType() == x.GetParameters().SingleOrDefault()?.ParameterType);
+        }
+
+        private static bool HasTypeSpecificEuquals(object obj)
+        {
+            var method = GetTypeSpecificEquals(obj);
+
+            return method != null;
+        }
+
+        private static bool IsValueType(object x)
+        {
+            return x.GetType().IsValueType;
+        }
+
+        internal class Context
+        {
+            private readonly List<Context> children = new List<Context>();
+
+            public Context(string caption)
+            {
+                if (string.IsNullOrWhiteSpace(caption)) throw new ArgumentException("Value cannot be null or whitespace.", nameof(caption));
+                this.Caption = caption;
+            }
+
+            public Context CreateChild(string childcaption)
+            {
+                var child = new Context(childcaption);
+                this.children.Add(child);
+                return child;
+            }
+
+            public IEnumerable<Context> GetAll()
+            {
+                return new[] { this }.Concat(this.GetAllChildren());
+            }
+
+            public IEnumerable<Context> GetAllChildren()
+            {
+                foreach (var child in this.children)
+                {
+                    yield return child;
+
+                    foreach (var grandChild in child.GetAllChildren())
+                    {
+                        yield return grandChild;
+                    }
+                }
+            }
+
+            public void SetPrintableValues(string xToString, string yToString)
+            {
+                this.XtoString = xToString;
+                this.YtoString = yToString;
+            }
+
+            public void SetResult(bool equal, string description)
+            {
+                this.Result = equal;
+                this.ResultDescription = description;
+            }
+
+            public string Caption { get; }
+
+            public bool Result { get; private set; }
+            public string ResultDescription { get; private set; }
+
+            public string XtoString { get; private set; } = string.Empty;
+            public string YtoString { get; private set; } = string.Empty;
+
+            public static bool AllChildrenEqual(Context context)
+            {
+                var allChildren = context.GetAllChildren().ToArray();
+                return allChildren.All(c => c.Result);
+            }
+
+            public static bool AllEqual(Context context)
+            {
+                var all = context.GetAll();
+                return all.All(c => c.Result);
+            }
         }
     }
 }

@@ -40,16 +40,16 @@ namespace deepequalitycomparer.tests
         [Test]
         public void CompareEnum()
         {
-            Assert.That(DeepEqualityComparer.Equals(SomeEnum.Value1, SomeEnum.Value1), Is.True);
-            Assert.That(DeepEqualityComparer.Equals(SomeEnum.Value1, SomeEnum.Value2), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(SomeEnum.Value1, SomeEnum.Value1), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(SomeEnum.Value1, SomeEnum.Value2), Is.False);
         }
 
         [Test]
         public void CompareIntegers()
         {
-            Assert.That(DeepEqualityComparer.Equals(1, 1), Is.True);
-            Assert.That(DeepEqualityComparer.Equals(1, 2), Is.False);
-            Assert.That(DeepEqualityComparer.Equals(2, 1), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(1, 1), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(1, 2), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(2, 1), Is.False);
         }
 
         [Test]
@@ -59,8 +59,8 @@ namespace deepequalitycomparer.tests
             var struct2 = new SomeStruct { Short = 234, Value = 456 };
             var struct3 = new SomeStruct { Short = -234, Value = 1456 };
 
-            Assert.That(DeepEqualityComparer.Equals(struct1, struct2), Is.True);
-            Assert.That(DeepEqualityComparer.Equals(struct1, struct3), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(struct1, struct2), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(struct1, struct3), Is.False);
         }
 
         private enum SomeEnum
