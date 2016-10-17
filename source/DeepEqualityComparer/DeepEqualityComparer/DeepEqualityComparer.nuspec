@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>DeepEqualityComparer</id>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <authors>StefanStolz</authors>
     <owners>StefanStolz</owners>
     <title>DeepEqualityComparer</title>
