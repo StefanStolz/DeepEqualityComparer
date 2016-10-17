@@ -22,7 +22,7 @@ namespace UsageOfNugetPackage
             var so1 = new SomeObject { Number = 12, Text = "abc" };
             var so2 = new SomeObject { Number = 12, Text = "abc" };
             
-            Assert.That(so1, Is.EqualTo(so2).Using(DeepEqualityComparer.Default<SomeObject>()));
+            Assert.That(so1, Is.EqualTo(so2).Using(DeepEqualityComparer.Default));
         }
     }
 }
