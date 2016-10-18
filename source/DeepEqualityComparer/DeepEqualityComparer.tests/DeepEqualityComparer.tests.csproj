@@ -50,8 +50,10 @@
     <Compile Include="CompareStringsTests.cs" />
     <Compile Include="CompareValueTypesTests.cs" />
     <Compile Include="CompareObjectReferencesTests.cs" />
+    <Compile Include="CompareWithLoggingTests.cs" />
     <Compile Include="ContextTests.cs" />
     <Compile Include="ExplorationTests.cs" />
+    <Compile Include="IgnorePropertiesByNameTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

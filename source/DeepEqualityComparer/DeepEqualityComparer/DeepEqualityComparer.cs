@@ -30,6 +30,7 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -44,26 +45,64 @@ namespace deepequalitycomparer
 
         public static DeepEqualityComparer DefaultWithConsoleOutput => new DeepEqualityComparer(Console.Out);
 
-        private readonly TextWriter logingTarget;
+        private readonly TextWriter loggingTextWriter;
+        private readonly IReadOnlyCollection<string> propertiesToIgnore = new ReadOnlyCollection<string>(new string[0]);
 
         private DeepEqualityComparer()
-        {}
+        { }
 
-        public DeepEqualityComparer(TextWriter logingTarget)
+        public class Configuration
         {
-            if (logingTarget == null) throw new ArgumentNullException(nameof(logingTarget));
-            this.logingTarget = logingTarget;
+            private TextWriter loggingTextWriter;
+
+            private readonly List<string> propertiesToIgnore = new List<string>();
+
+            public Configuration SetLoggingTextWriter(TextWriter textWriter)
+            {
+                this.loggingTextWriter = textWriter;
+
+                return this;
+            }
+
+            public Configuration IgnorePropertyByName(string nameOfProperty)
+            {
+                this.propertiesToIgnore.Add(nameOfProperty);
+
+                return this;
+            }
+
+            public DeepEqualityComparer CreateEqualityComparer()
+            {
+                return new DeepEqualityComparer(this.loggingTextWriter, this.propertiesToIgnore);
+            }
+        }
+
+        public static Configuration CreateConfiguration()
+        {
+            return new Configuration();
+        }
+
+        private DeepEqualityComparer(TextWriter textWriter, IReadOnlyCollection<string> propertiesToIgnore)
+        {
+            this.loggingTextWriter = textWriter;
+            this.propertiesToIgnore = propertiesToIgnore;
+        }
+
+        public DeepEqualityComparer(TextWriter loggingTextWriter)
+        {
+            if (loggingTextWriter == null) throw new ArgumentNullException(nameof(loggingTextWriter));
+            this.loggingTextWriter = loggingTextWriter;
         }
 
         internal void PrintResult(Context context)
         {
-            if (this.logingTarget == null) return;
+            if (this.loggingTextWriter == null) return;
 
-            using (var tw = new IndentedTextWriter(this.logingTarget, "  "))
+            using (var textWriter = new IndentedTextWriter(this.loggingTextWriter, "  "))
             {
-                tw.Indent = 0;
-                this.PrintItem(tw, context);
-                this.PrintItems(tw, context.GetAllChildren());
+                textWriter.Indent = 0;
+                this.PrintItem(textWriter, context);
+                this.PrintItems(textWriter, context.GetAllChildren());
             }
         }
 
@@ -80,8 +119,8 @@ namespace deepequalitycomparer
 
         private void PrintItem(TextWriter textWriter, Context context)
         {
-            var itemEqual = context.Result?"equal": "not equal";
-            textWriter.WriteLine($"{context.Caption}: {itemEqual}");
+            var itemEqual = context.Result ? "equal" : "not equal";
+            textWriter.WriteLine($"{context.Caption}: {itemEqual} - x: {context.XtoString} y: {context.YtoString}");
         }
 
         /// <summary>
@@ -106,14 +145,8 @@ namespace deepequalitycomparer
 
         private bool AreBothPureIEnumerable(object x, object y)
         {
-            var propertiesOfX = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var propertiesOfY = y.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            if (propertiesOfX.Any() ||
-                propertiesOfY.Any()) return false;
-
-            var isXanIEnumerable = IsIEnumerable(x);
-            var ixYanIEnumerable = IsIEnumerable(y);
+            var isXanIEnumerable = this.IsPureIEnumerable(x);
+            var ixYanIEnumerable = this.IsPureIEnumerable(y);
 
             return isXanIEnumerable && ixYanIEnumerable;
         }
@@ -197,7 +230,7 @@ namespace deepequalitycomparer
                 return "(array)";
             }
 
-            if (IsIEnumerable(obj))
+            if (this.IsPureIEnumerable(obj))
             {
                 return "(IEnumerable)";
             }
@@ -233,6 +266,7 @@ namespace deepequalitycomparer
             foreach (var propertyInfo in properties)
             {
                 if (!propertyInfo.CanRead) continue;
+                if (this.propertiesToIgnore.Contains(propertyInfo.Name)) continue;
 
                 if (!IsIndexer(propertyInfo))
                 {
@@ -267,6 +301,16 @@ namespace deepequalitycomparer
             return isIEnumerable;
         }
 
+        private bool IsPureIEnumerable(object obj)
+        {
+            var type = obj.GetType();
+
+            if (type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Any()) return false;
+            var isIEnumerable = type.GetInterfaces().Any(i => i == typeof(IEnumerable));
+
+            return isIEnumerable;
+        }
+
         private bool IsIndexer(PropertyInfo propertyInfo)
         {
             return propertyInfo.GetIndexParameters().Length > 0;
@@ -274,7 +318,7 @@ namespace deepequalitycomparer
 
         private ArrayList MakeArrayList(object obj)
         {
-            if (!IsIEnumerable(obj)) throw new ArithmeticException("obj must be an IEnumerable");
+            if (!IsIEnumerable(obj)) throw new ArgumentException("obj must be an IEnumerable");
 
             var enumerable = (IEnumerable)obj;
 
