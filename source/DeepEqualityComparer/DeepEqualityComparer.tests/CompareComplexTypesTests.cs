@@ -55,15 +55,6 @@ namespace deepequalitycomparer.tests
             Assert.That(DeepEqualityComparer.AreEqual(instance1, instance2), Is.True);
         }
 
-        [Test]
-        public void CompareWithLogging()
-        {
-            var instance1 = new SomeType { Text = new string(new[] { 'T' }), Number = 12 };
-            var instance2 = new SomeType { Text = new string(new[] { 'X' }), Number = 12 };
-
-            Assert.That(instance1, Is.Not.EqualTo(instance2).Using(DeepEqualityComparer.DefaultWithConsoleOutput));
-        }
-
         private class SomeType
         {
             public int Number { get; set; }
