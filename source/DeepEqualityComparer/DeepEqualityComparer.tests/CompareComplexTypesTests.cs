@@ -40,8 +40,8 @@ namespace deepequalitycomparer.tests
         [Test]
         public void CompareDifferentInstancesOfTypesWithoutEquals()
         {
-            var instance1 = new SomeType { Text = new string(new[] { 'T' }), Number = 12 };
-            var instance2 = new SomeType { Text = new string(new[] { 'X' }), Number = 12 };
+            var instance1 = new SomeType { Text = "T", Number = 12 };
+            var instance2 = new SomeType { Text = "X", Number = 12 };
 
             Assert.That(DeepEqualityComparer.AreEqual(instance1, instance2), Is.False);
         }

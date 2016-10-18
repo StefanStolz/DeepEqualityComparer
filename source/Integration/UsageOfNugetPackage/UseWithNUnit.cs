@@ -24,5 +24,14 @@ namespace UsageOfNugetPackage
             
             Assert.That(so1, Is.EqualTo(so2).Using(DeepEqualityComparer.Default));
         }
+
+        [Test]
+        public void CompareWithLogging()
+        {
+            var so1 = new SomeObject { Number = 12, Text = "abc" };
+            var so2 = new SomeObject { Number = 12, Text = "abcd" };
+
+            Assert.That(so1, Is.EqualTo(so2).Using(DeepEqualityComparer.DefaultWithConsoleOutput));
+        }
     }
 }

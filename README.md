@@ -8,6 +8,8 @@ It primary intended to be used in Unit-Tests.
 
 ## Usage
 
+Using the Default Comparere without logging or any special configuration
+
 ```csharp
     [TestFixture]
     public class UseWithNUnit

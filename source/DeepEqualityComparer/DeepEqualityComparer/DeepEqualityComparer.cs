@@ -120,7 +120,7 @@ namespace deepequalitycomparer
         private void PrintItem(TextWriter textWriter, Context context)
         {
             var itemEqual = context.Result ? "equal" : "not equal";
-            textWriter.WriteLine($"{context.Caption}: {itemEqual}");
+            textWriter.WriteLine($"{context.Caption}: {itemEqual} - x: {context.XtoString} y: {context.YtoString}");
         }
 
         /// <summary>
@@ -145,14 +145,8 @@ namespace deepequalitycomparer
 
         private bool AreBothPureIEnumerable(object x, object y)
         {
-            var propertiesOfX = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var propertiesOfY = y.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            if (propertiesOfX.Any() ||
-                propertiesOfY.Any()) return false;
-
-            var isXanIEnumerable = IsIEnumerable(x);
-            var ixYanIEnumerable = IsIEnumerable(y);
+            var isXanIEnumerable = this.IsPureIEnumerable(x);
+            var ixYanIEnumerable = this.IsPureIEnumerable(y);
 
             return isXanIEnumerable && ixYanIEnumerable;
         }
@@ -236,7 +230,7 @@ namespace deepequalitycomparer
                 return "(array)";
             }
 
-            if (IsIEnumerable(obj))
+            if (this.IsPureIEnumerable(obj))
             {
                 return "(IEnumerable)";
             }
@@ -307,6 +301,16 @@ namespace deepequalitycomparer
             return isIEnumerable;
         }
 
+        private bool IsPureIEnumerable(object obj)
+        {
+            var type = obj.GetType();
+
+            if (type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Any()) return false;
+            var isIEnumerable = type.GetInterfaces().Any(i => i == typeof(IEnumerable));
+
+            return isIEnumerable;
+        }
+
         private bool IsIndexer(PropertyInfo propertyInfo)
         {
             return propertyInfo.GetIndexParameters().Length > 0;
@@ -314,7 +318,7 @@ namespace deepequalitycomparer
 
         private ArrayList MakeArrayList(object obj)
         {
-            if (!IsIEnumerable(obj)) throw new ArithmeticException("obj must be an IEnumerable");
+            if (!IsIEnumerable(obj)) throw new ArgumentException("obj must be an IEnumerable");
 
             var enumerable = (IEnumerable)obj;
 
