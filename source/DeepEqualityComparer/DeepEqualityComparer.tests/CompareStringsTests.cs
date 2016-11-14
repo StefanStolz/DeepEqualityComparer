@@ -55,5 +55,31 @@ namespace deepequalitycomparer.tests
 
             Assert.That(DeepEqualityComparer.AreEqual(text1, text2), Is.True);
         }
+
+        [Test]
+        public void CompareStringWithDifferentCasingAndConfigureStringComparison()
+        {
+            var text1 = "abcd";
+            var text2 = "ABCD";
+
+            var comparer =
+                DeepEqualityComparer.CreateConfiguration()
+                    .ConfigureStringComparison(StringComparison.OrdinalIgnoreCase)
+                    .CreateEqualityComparer();
+
+            Assert.That(comparer.Equals(text1, text2), Is.True);
+        }
+
+        [Test]
+        public void TreatNullAsEmptyString()
+        {
+            var comparer = DeepEqualityComparer
+                .CreateConfiguration()
+                .TreatNullAsEmptyString(true)
+                .CreateEqualityComparer();
+
+            Assert.That(comparer.Equals(null, string.Empty), Is.True);
+            Assert.That(comparer.Equals(string.Empty, null), Is.True);
+        }
     }
 }
