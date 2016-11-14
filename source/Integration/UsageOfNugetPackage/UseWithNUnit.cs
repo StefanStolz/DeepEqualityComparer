@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.IO;
 
 using deepequalitycomparer;
@@ -62,6 +63,31 @@ namespace UsageOfNugetPackage
                 .CreateConfiguration()
                 .IgnorePropertyByName("Text")
                 .CreateEqualityComparer();
+
+            Assert.That(so1, Is.EqualTo(so2).Using(comparer));
+        }
+
+        [Test]
+        public void ConfigureStringComparison()
+        {
+            var text1 = "abcd";
+            var text2 = "ABCD";
+
+            var comparer =
+                DeepEqualityComparer.CreateConfiguration()
+                    .ConfigureStringComparison(StringComparison.OrdinalIgnoreCase)
+                    .CreateEqualityComparer();
+
+            Assert.That(text1, Is.EqualTo(text2).Using(comparer));
+        }
+
+        [Test]
+        public void TreatNullAsEmptyString()
+        {
+            var so1 = new SomeObject { Number = 12, Text = string.Empty };
+            var so2 = new SomeObject { Number = 12, Text = null };
+
+            var comparer = DeepEqualityComparer.CreateConfiguration().TreatNullAsEmptyString(true).CreateEqualityComparer();
 
             Assert.That(so1, Is.EqualTo(so2).Using(comparer));
         }

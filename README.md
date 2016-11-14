@@ -1,4 +1,4 @@
-# DeepEqualityComparer
+﻿# DeepEqualityComparer
 
 DeepEqualityComparer checks two objects trees for equality.
 It implements the .NET Framekwork IComparer interface and can be used everywhere where an IComparer
@@ -84,4 +84,34 @@ This will print something like this
         .CreateEqualityComparer();
 
         Assert.That(so1, Is.EqualTo(so2).Using(comparer));
+```
+
+### Configure how strings are compared
+
+#### Configure StringComparison
+
+```csharp
+    var text1 = "abcd";
+    var text2 = "ABCD";
+
+    var comparer =
+        DeepEqualityComparer.CreateConfiguration()
+            .ConfigureStringComparison(StringComparison.OrdinalIgnoreCase)
+            .CreateEqualityComparer();
+
+    Assert.That(text1, Is.EqualTo(text2).Using(comparer));
+```
+
+#### Treat Null As Empty String
+
+```csharp
+    var so1 = new SomeObject { Number = 12, Text = string.Empty };
+    var so2 = new SomeObject { Number = 12, Text = null };
+
+    var comparer = 
+        DeepEqualityComparer.CreateConfiguration()
+            .TreatNullAsEmptyString(true)
+            .CreateEqualityComparer();
+
+    Assert.That(so1, Is.EqualTo(so2).Using(comparer));
 ```
