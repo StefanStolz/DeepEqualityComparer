@@ -47,13 +47,19 @@ namespace deepequalitycomparer
 
         private readonly TextWriter loggingTextWriter;
         private readonly IReadOnlyCollection<string> propertiesToIgnore = new ReadOnlyCollection<string>(new string[0]);
+        private readonly StringComparison? stringComparison;
+        private readonly bool treatNullAsEmptyString;
 
         private DeepEqualityComparer()
         { }
 
         public class Configuration
         {
+            private StringComparison? stringComparison;
+
             private TextWriter loggingTextWriter;
+
+            private bool treatNullAsEmptyString;
 
             private readonly List<string> propertiesToIgnore = new List<string>();
 
@@ -71,9 +77,22 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            public Configuration ConfigureStringComparison(StringComparison stringComparison)
+            {
+                this.stringComparison = stringComparison;
+
+                return this;
+            }
+
+            public Configuration TreatNullAsEmptyString(bool treatNullAsEmptyString)
+            {
+                this.treatNullAsEmptyString = treatNullAsEmptyString;
+                return this;
+            }
+
             public DeepEqualityComparer CreateEqualityComparer()
             {
-                return new DeepEqualityComparer(this.loggingTextWriter, this.propertiesToIgnore);
+                return new DeepEqualityComparer(this.loggingTextWriter, this.propertiesToIgnore, this.stringComparison, this.treatNullAsEmptyString);
             }
         }
 
@@ -82,10 +101,12 @@ namespace deepequalitycomparer
             return new Configuration();
         }
 
-        private DeepEqualityComparer(TextWriter textWriter, IReadOnlyCollection<string> propertiesToIgnore)
+        private DeepEqualityComparer(TextWriter loggingTextWriter, IReadOnlyCollection<string> propertiesToIgnore, StringComparison? stringComparison, bool treatNullAsEmptyString)
         {
-            this.loggingTextWriter = textWriter;
+            this.loggingTextWriter = loggingTextWriter;
             this.propertiesToIgnore = propertiesToIgnore;
+            this.stringComparison = stringComparison;
+            this.treatNullAsEmptyString = treatNullAsEmptyString;
         }
 
         public DeepEqualityComparer(TextWriter loggingTextWriter)
@@ -173,6 +194,17 @@ namespace deepequalitycomparer
                 context.SetResult(true, "Equal Reference");
                 return;
             }
+
+            if (this.treatNullAsEmptyString)
+            {
+                if (x is string ||
+                    y is string)
+                {
+                    x = x ?? string.Empty;
+                    y = y ?? string.Empty;
+                }
+            }
+
             if (ReferenceEquals(x, null))
             {
                 context.SetResult(false, "x == null");
@@ -211,6 +243,13 @@ namespace deepequalitycomparer
                 return;
             }
 
+            if (IsString(x))
+            {
+                var value = AreStringsEqual((string)x, (string)y);
+                context.SetResult(value, "String");
+                return;
+            }
+
             if (HasTypeSpecificEuquals(x))
             {
                 var value = AreEqualBySpecificEquals(x, y);
@@ -219,6 +258,27 @@ namespace deepequalitycomparer
             }
 
             ArePropertiesEqual(context, x, y);
+        }
+
+        private bool IsString(object obj)
+        {
+            return obj is string;
+        }
+
+        private bool AreStringsEqual(string x, string y)
+        {
+            if (this.treatNullAsEmptyString)
+            {
+                x = x ?? string.Empty;
+                y = y ?? string.Empty;
+            }
+
+            if (this.stringComparison.HasValue)
+            {
+                return x.Equals(y, this.stringComparison.Value);
+            }
+
+            return x.Equals(y);
         }
 
         private string GetPrintableValue(object obj)
