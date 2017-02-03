@@ -49,6 +49,7 @@ namespace deepequalitycomparer
         private readonly IReadOnlyCollection<string> propertiesToIgnore = new ReadOnlyCollection<string>(new string[0]);
         private readonly StringComparison? stringComparison;
         private readonly bool treatNullAsEmptyString;
+        private readonly bool ignoreIndexer;
 
         private DeepEqualityComparer()
         { }
@@ -62,6 +63,15 @@ namespace deepequalitycomparer
             private bool treatNullAsEmptyString;
 
             private readonly List<string> propertiesToIgnore = new List<string>();
+
+            private bool ignoreIndexer;
+
+            public Configuration SetIgnoreIndexer(bool ignoreIndexer)
+            {
+                this.ignoreIndexer = ignoreIndexer;
+
+                return this;
+            }
 
             public Configuration SetLoggingTextWriter(TextWriter textWriter)
             {
@@ -92,7 +102,7 @@ namespace deepequalitycomparer
 
             public DeepEqualityComparer CreateEqualityComparer()
             {
-                return new DeepEqualityComparer(this.loggingTextWriter, this.propertiesToIgnore, this.stringComparison, this.treatNullAsEmptyString);
+                return new DeepEqualityComparer(this.loggingTextWriter, this.propertiesToIgnore, this.stringComparison, this.treatNullAsEmptyString, this.ignoreIndexer);
             }
         }
 
@@ -101,12 +111,13 @@ namespace deepequalitycomparer
             return new Configuration();
         }
 
-        private DeepEqualityComparer(TextWriter loggingTextWriter, IReadOnlyCollection<string> propertiesToIgnore, StringComparison? stringComparison, bool treatNullAsEmptyString)
+        private DeepEqualityComparer(TextWriter loggingTextWriter, IReadOnlyCollection<string> propertiesToIgnore, StringComparison? stringComparison, bool treatNullAsEmptyString, bool ignoreIndexer)
         {
             this.loggingTextWriter = loggingTextWriter;
             this.propertiesToIgnore = propertiesToIgnore;
             this.stringComparison = stringComparison;
             this.treatNullAsEmptyString = treatNullAsEmptyString;
+            this.ignoreIndexer = ignoreIndexer;
         }
 
         public DeepEqualityComparer(TextWriter loggingTextWriter)
@@ -308,6 +319,7 @@ namespace deepequalitycomparer
 
         private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
         {
+            if (this.ignoreIndexer) return true;
             throw new NotSupportedException("Indexers are currently not supported");
         }
 
