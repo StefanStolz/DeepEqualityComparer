@@ -268,6 +268,14 @@ namespace deepequalitycomparer
                 return;
             }
 
+            if (IsIEnumerable(x) &&
+                IsIEnumerable(y))
+            {
+                var value = this.AreIEnumerablesEqual(context, x, y);
+                context.SetResult(value, "IEnumerable");
+                return;
+            }
+
             ArePropertiesEqual(context, x, y);
         }
 

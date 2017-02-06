@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>DeepEqualityComparer</id>
-    <version>1.3.1</version>
+    <version>1.3.2</version>
     <authors>StefanStolz</authors>
     <owners>StefanStolz</owners>
     <title>DeepEqualityComparer</title>
@@ -15,7 +15,7 @@
     Ignore Properties by Name.
     Special treatment of string compares
     </releaseNotes>
-    <copyright>Copyright 2016</copyright>
+    <copyright>Copyright 2017</copyright>
     <tags>IEqualityComparer Comparer</tags>
   </metadata>
 </package>
