@@ -55,6 +55,7 @@
     <Compile Include="ExplorationTests.cs" />
     <Compile Include="IgnorePropertiesByNameTests.cs" />
     <Compile Include="CompareObjectsWithCollectionTests.cs" />
+    <Compile Include="IgnorePropertiesByTypeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -35,7 +35,7 @@ using NUnit.Framework;
 namespace deepequalitycomparer.tests
 {
     [TestFixture]
-    public sealed class IgnorePropertiesByNameTests
+    public sealed class IgnorePropertiesByTypeTests
     {
         [Test]
         public void CompareNotEqualInstances()
@@ -45,7 +45,7 @@ namespace deepequalitycomparer.tests
 
             var sut = DeepEqualityComparer
                 .CreateConfiguration()
-                .IgnorePropertyByName("Text")
+                .IgnorePropertyByType(typeof(string))
                 .CreateEqualityComparer();
 
             Assert.That(instance1, Is.EqualTo(instance2).Using(sut));

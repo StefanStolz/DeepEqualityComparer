@@ -47,12 +47,13 @@ namespace deepequalitycomparer
 
         private readonly TextWriter loggingTextWriter;
         private readonly IReadOnlyCollection<string> propertiesToIgnore = new ReadOnlyCollection<string>(new string[0]);
+        private readonly IReadOnlyCollection<Type> typesToIgnore = new ReadOnlyCollection<Type>(new Type[0]);
         private readonly StringComparison? stringComparison;
         private readonly bool treatNullAsEmptyString;
         private readonly bool ignoreIndexer;
 
         private DeepEqualityComparer()
-        { }
+        {}
 
         public class Configuration
         {
@@ -63,6 +64,7 @@ namespace deepequalitycomparer
             private bool treatNullAsEmptyString;
 
             private readonly List<string> propertiesToIgnore = new List<string>();
+            private readonly List<Type> typesToIgnore = new List<Type>();
 
             private bool ignoreIndexer;
 
@@ -102,7 +104,22 @@ namespace deepequalitycomparer
 
             public DeepEqualityComparer CreateEqualityComparer()
             {
-                return new DeepEqualityComparer(this.loggingTextWriter, this.propertiesToIgnore, this.stringComparison, this.treatNullAsEmptyString, this.ignoreIndexer);
+                var propsToIgnore = this.propertiesToIgnore.Distinct().ToList().AsReadOnly();
+                var typesToIgnore = this.typesToIgnore.Distinct().ToList().AsReadOnly();
+
+                return new DeepEqualityComparer(
+                    this.loggingTextWriter,
+                    propsToIgnore,
+                    typesToIgnore,
+                    this.stringComparison,
+                    this.treatNullAsEmptyString,
+                    this.ignoreIndexer);
+            }
+
+            public Configuration IgnorePropertyByType(Type type)
+            {
+                this.typesToIgnore.Add(type);
+                return this;
             }
         }
 
@@ -111,10 +128,17 @@ namespace deepequalitycomparer
             return new Configuration();
         }
 
-        private DeepEqualityComparer(TextWriter loggingTextWriter, IReadOnlyCollection<string> propertiesToIgnore, StringComparison? stringComparison, bool treatNullAsEmptyString, bool ignoreIndexer)
+        private DeepEqualityComparer(
+            TextWriter loggingTextWriter,
+            IReadOnlyCollection<string> propertiesToIgnore,
+            IReadOnlyCollection<Type> typesToIgnore,
+            StringComparison? stringComparison,
+            bool treatNullAsEmptyString,
+            bool ignoreIndexer)
         {
             this.loggingTextWriter = loggingTextWriter;
             this.propertiesToIgnore = propertiesToIgnore;
+            this.typesToIgnore = typesToIgnore;
             this.stringComparison = stringComparison;
             this.treatNullAsEmptyString = treatNullAsEmptyString;
             this.ignoreIndexer = ignoreIndexer;
@@ -347,6 +371,7 @@ namespace deepequalitycomparer
             {
                 if (!propertyInfo.CanRead) continue;
                 if (this.propertiesToIgnore.Contains(propertyInfo.Name)) continue;
+                if (this.typesToIgnore.Contains(propertyInfo.PropertyType)) continue;
 
                 if (!IsIndexer(propertyInfo))
                 {

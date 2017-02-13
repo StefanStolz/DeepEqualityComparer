@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>DeepEqualityComparer</id>
-    <version>1.3.2</version>
+    <version>1.4.0</version>
     <authors>StefanStolz</authors>
     <owners>StefanStolz</owners>
     <title>DeepEqualityComparer</title>
@@ -12,7 +12,8 @@
     <description>Generic IEqualityComparer which performs a deep comparison of object trees</description>
     <releaseNotes>
     Print Comparison Result to TextWriter
-    Ignore Properties by Name.
+    Ignore Properties by Name
+    Ignore Properties by Type
     Special treatment of string compares
     </releaseNotes>
     <copyright>Copyright 2017</copyright>
