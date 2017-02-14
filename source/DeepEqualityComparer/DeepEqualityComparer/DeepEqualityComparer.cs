@@ -51,6 +51,7 @@ namespace deepequalitycomparer
         private readonly StringComparison? stringComparison;
         private readonly bool treatNullAsEmptyString;
         private readonly bool ignoreIndexer;
+        private readonly bool logOnlyNotEqualItems;
 
         private DeepEqualityComparer()
         {}
@@ -67,6 +68,7 @@ namespace deepequalitycomparer
             private readonly List<Type> typesToIgnore = new List<Type>();
 
             private bool ignoreIndexer;
+            private bool logOnlyNotEqualItems;
 
             public Configuration SetIgnoreIndexer(bool ignoreIndexer)
             {
@@ -78,6 +80,15 @@ namespace deepequalitycomparer
             public Configuration SetLoggingTextWriter(TextWriter textWriter)
             {
                 this.loggingTextWriter = textWriter;
+
+                return this;
+            }
+
+
+            public Configuration SetLoggingTextWriter(TextWriter textWriter, bool logOnlyNotEqualItems)
+            {
+                this.loggingTextWriter = textWriter;
+                this.logOnlyNotEqualItems = logOnlyNotEqualItems;
 
                 return this;
             }
@@ -113,7 +124,8 @@ namespace deepequalitycomparer
                     typesToIgnore,
                     this.stringComparison,
                     this.treatNullAsEmptyString,
-                    this.ignoreIndexer);
+                    this.ignoreIndexer,
+                    this.logOnlyNotEqualItems);
             }
 
             public Configuration IgnorePropertyByType(Type type)
@@ -134,7 +146,7 @@ namespace deepequalitycomparer
             IReadOnlyCollection<Type> typesToIgnore,
             StringComparison? stringComparison,
             bool treatNullAsEmptyString,
-            bool ignoreIndexer)
+            bool ignoreIndexer, bool logOnlyNotEqualItems)
         {
             this.loggingTextWriter = loggingTextWriter;
             this.propertiesToIgnore = propertiesToIgnore;
@@ -142,6 +154,7 @@ namespace deepequalitycomparer
             this.stringComparison = stringComparison;
             this.treatNullAsEmptyString = treatNullAsEmptyString;
             this.ignoreIndexer = ignoreIndexer;
+            this.logOnlyNotEqualItems = logOnlyNotEqualItems;
         }
 
         public DeepEqualityComparer(TextWriter loggingTextWriter)
@@ -175,6 +188,9 @@ namespace deepequalitycomparer
 
         private void PrintItem(TextWriter textWriter, Context context)
         {
+            if (this.logOnlyNotEqualItems &&
+                context.Result) return;
+
             var itemEqual = context.Result ? "equal" : "not equal";
             textWriter.WriteLine($"{context.Caption}: {itemEqual} - x: {context.XtoString} y: {context.YtoString}");
         }
