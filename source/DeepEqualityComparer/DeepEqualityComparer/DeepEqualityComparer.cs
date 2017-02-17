@@ -45,6 +45,8 @@ namespace deepequalitycomparer
 
         public static DeepEqualityComparer DefaultWithConsoleOutput => new DeepEqualityComparer(Console.Out);
 
+        public static DeepEqualityComparer DefaultWithLogNotEqualToConsole =>new DeepEqualityComparer(Console.Out, true);
+
         private readonly TextWriter loggingTextWriter;
         private readonly IReadOnlyCollection<string> propertiesToIgnore = new ReadOnlyCollection<string>(new string[0]);
         private readonly IReadOnlyCollection<Type> typesToIgnore = new ReadOnlyCollection<Type>(new Type[0]);
@@ -161,6 +163,13 @@ namespace deepequalitycomparer
         {
             if (loggingTextWriter == null) throw new ArgumentNullException(nameof(loggingTextWriter));
             this.loggingTextWriter = loggingTextWriter;
+        }
+
+        private DeepEqualityComparer(TextWriter loggingTextWriter, bool logOnlyNotEqualItems)
+        {
+            if (loggingTextWriter == null) throw new ArgumentNullException(nameof(loggingTextWriter));
+            this.loggingTextWriter = loggingTextWriter;
+            this.logOnlyNotEqualItems = logOnlyNotEqualItems;
         }
 
         internal void PrintResult(Context context)
