@@ -36,6 +36,26 @@ All Properties are compared.
     }
 ```
 
+### Ignore Indexer
+
+As it is very difficult to compare indexers, DeepEqualityComparer throws an Exception if there
+is an indexer. To override this behaviour it is possible to ignore indexers.
+
+> I'm working on a solution to compare Objects with indexers
+
+
+```csharp
+    var so1 = new SomeObjectWithIndexer();
+    var so2 = new SomeObjectWithIndexer();
+    
+    var comparer = DeepEqualityComparer.CreateConfiguration()
+            .SetIgnoreIndexer(true)
+            .CreateEqualityComparer();
+
+    Assert.That(so1, Is.EqualTo(so2).Using(comparer));
+```
+
+
 ### Print comparison result to Console
 
 Using the pre-configured instance DefaultWithConsoleOutput the DeepEqualityComparer prints the result
