@@ -21,8 +21,9 @@ namespace UsageOfNugetPackage
         private class SomeObjectWithIndexer
         {
             public string this[int index] => string.Empty;
+        }
 
-            [Test]
+        [Test]
             public void CompareSomeObjects()
             {
                 var so1 = new SomeObject { Number = 12, Text = "abc" };
@@ -109,4 +110,3 @@ namespace UsageOfNugetPackage
             }
         }
     }
-}

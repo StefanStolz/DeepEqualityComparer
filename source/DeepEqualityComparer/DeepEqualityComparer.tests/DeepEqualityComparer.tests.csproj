@@ -47,6 +47,7 @@
     <Compile Include="CompareArraysTests.cs" />
     <Compile Include="CompareComplexTypesTests.cs" />
     <Compile Include="CompareEnumerablesTests.cs" />
+    <Compile Include="ComparePropertiesWithTypeSpecificComparer.cs" />
     <Compile Include="CompareStringsTests.cs" />
     <Compile Include="CompareValueTypesTests.cs" />
     <Compile Include="CompareObjectReferencesTests.cs" />
