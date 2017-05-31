@@ -45,7 +45,7 @@ namespace deepequalitycomparer
 
         public static DeepEqualityComparer DefaultWithConsoleOutput => new DeepEqualityComparer(Console.Out);
 
-        public static DeepEqualityComparer DefaultWithLogNotEqualToConsole => new DeepEqualityComparer(Console.Out, true);
+        public static DeepEqualityComparer DefaultWithLogNotEqualToConsole =>new DeepEqualityComparer(Console.Out, true);
         private readonly Dictionary<Type, IEqualityComparer> comparerForSpecificType = new Dictionary<Type, IEqualityComparer>();
         private readonly bool ignoreIndexer;
 
@@ -59,6 +59,8 @@ namespace deepequalitycomparer
         private DeepEqualityComparer()
         {}
 
+        private readonly Dictionary<Type, object> nullReplacements = new Dictionary<Type, object>();
+
         private DeepEqualityComparer(
             TextWriter loggingTextWriter,
             IReadOnlyCollection<string> propertiesToIgnore,
@@ -67,7 +69,8 @@ namespace deepequalitycomparer
             bool treatNullAsEmptyString,
             bool ignoreIndexer,
             bool logOnlyNotEqualItems,
-            IEnumerable<KeyValuePair<Type, IEqualityComparer>> comparerForSpecificType)
+            IEnumerable<KeyValuePair<Type, IEqualityComparer>> comparerForSpecificType,
+			IReadOnlyCollection<Tuple<Type, object>> nullReplacements)
         {
             this.loggingTextWriter = loggingTextWriter;
             this.propertiesToIgnore = propertiesToIgnore;
@@ -81,6 +84,11 @@ namespace deepequalitycomparer
             {
                 this.comparerForSpecificType.Add(keyValuePair.Key, keyValuePair.Value);
             }
+			
+            foreach (var nullReplacement in nullReplacements)
+            {
+                this.nullReplacements.Add(nullReplacement.Item1, nullReplacement.Item2);
+            }			
         }
 
         public DeepEqualityComparer(TextWriter loggingTextWriter)
@@ -169,6 +177,18 @@ namespace deepequalitycomparer
                 }
             }
 
+            if (ReferenceEquals(x, null) ^ ReferenceEquals(y, null))
+            {
+                if (ReferenceEquals(x, null))
+                {
+                    x = GetNullReplacementValue(y.GetType());
+                }
+                else
+                {
+                    y = GetNullReplacementValue(x.GetType());
+                }
+            }
+
             if (ReferenceEquals(x, null))
             {
                 context.SetResult(false, "x == null");
@@ -239,6 +259,22 @@ namespace deepequalitycomparer
             ArePropertiesEqual(context, x, y);
         }
 
+        private object GetNullReplacementValue(Type type)
+        {
+            object result = null;
+
+            this.nullReplacements.TryGetValue(type, out result);
+
+            return result;
+        }
+
+        private bool CompareWithTypeSpecificComparer(object x, object y)
+        {
+            var comparer = this.comparerForSpecificType[x.GetType()];
+
+            return comparer.Equals(x, y);
+        }
+
         private bool AreIEnumerablesEqual(Context context, object x, object y)
         {
             var listX = this.MakeArrayList(x);
@@ -247,10 +283,57 @@ namespace deepequalitycomparer
             return AreArraysEqual(context, listX.ToArray(), listY.ToArray());
         }
 
+        private bool AreStringsEqual(string x, string y)
+        {
+            if (this.treatNullAsEmptyString)
+            {
+                x = x ?? string.Empty;
+                y = y ?? string.Empty;
+            }
+
+            if (this.stringComparison.HasValue)
+            {
+                return x.Equals(y, this.stringComparison.Value);
+            }
+
+            return x.Equals(y);
+        }
+
+        private string GetPrintableValue(object obj)
+        {
+            if (ReferenceEquals(obj, null)) return "(null)";
+
+            if (IsArray(obj))
+            {
+                return "(array)";
+            }
+
+            if (this.IsPureIEnumerable(obj))
+            {
+                return "(IEnumerable)";
+            }
+
+            return obj.ToString();
+        }
+
         private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
         {
             if (this.ignoreIndexer) return true;
             throw new NotSupportedException("Indexers are currently not supported");
+        }
+
+        /// <summary>
+        /// Tests whether the specified object implements <see cref="IEnumerable" />.
+        /// </summary>
+        /// <param name="obj">The object to test.</param>
+        /// <returns>
+        /// <c>true</c> whether <paramref name="obj" /> implements <see cref="IEnumerable" />; otherwise <c>false</c>
+        /// </returns>
+        private bool IsIEnumerable(object obj)
+        {
+            var isIEnumerable = obj.GetType().GetInterfaces().Any(i => i == typeof(IEnumerable));
+
+            return isIEnumerable;
         }
 
         /// <summary>
@@ -290,78 +373,9 @@ namespace deepequalitycomparer
             context.SetResult(Context.AllChildrenEqual(context), "Properties");
         }
 
-        private bool AreStringsEqual(string x, string y)
-        {
-            if (this.treatNullAsEmptyString)
-            {
-                x = x ?? string.Empty;
-                y = y ?? string.Empty;
-            }
-
-            if (this.stringComparison.HasValue)
-            {
-                return x.Equals(y, this.stringComparison.Value);
-            }
-
-            return x.Equals(y);
-        }
-
-        private bool CompareWithTypeSpecificComparer(object x, object y)
-        {
-            var comparer = this.comparerForSpecificType[x.GetType()];
-
-            return comparer.Equals(x, y);
-        }
-
-        private string GetPrintableValue(object obj)
-        {
-            if (ReferenceEquals(obj, null)) return "(null)";
-
-            if (IsArray(obj))
-            {
-                return "(array)";
-            }
-
-            if (this.IsPureIEnumerable(obj))
-            {
-                return "(IEnumerable)";
-            }
-
-            return obj.ToString();
-        }
-
-        /// <summary>
-        /// Tests whether the specified object implements <see cref="IEnumerable" />.
-        /// </summary>
-        /// <param name="obj">The object to test.</param>
-        /// <returns>
-        /// <c>true</c> whether <paramref name="obj" /> implements <see cref="IEnumerable" />; otherwise <c>false</c>
-        /// </returns>
-        private bool IsIEnumerable(object obj)
-        {
-            var isIEnumerable = obj.GetType().GetInterfaces().Any(i => i == typeof(IEnumerable));
-
-            return isIEnumerable;
-        }
-
         private bool IsIndexer(PropertyInfo propertyInfo)
         {
             return propertyInfo.GetIndexParameters().Length > 0;
-        }
-
-        private bool IsPureIEnumerable(object obj)
-        {
-            var type = obj.GetType();
-
-            if (type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Any()) return false;
-            var isIEnumerable = type.GetInterfaces().Any(i => i == typeof(IEnumerable));
-
-            return isIEnumerable;
-        }
-
-        private bool IsString(object obj)
-        {
-            return obj is string;
         }
 
         private ArrayList MakeArrayList(object obj)
@@ -378,26 +392,6 @@ namespace deepequalitycomparer
             }
 
             return result;
-        }
-
-        private void PrintItem(TextWriter textWriter, Context context)
-        {
-            if (this.logOnlyNotEqualItems &&
-                context.Result) return;
-
-            var itemEqual = context.Result ? "equal" : "not equal";
-            textWriter.WriteLine($"{context.Caption}: {itemEqual} - x: {context.XtoString} y: {context.YtoString}");
-        }
-
-        private void PrintItems(IndentedTextWriter textWriter, IEnumerable<Context> items)
-        {
-            textWriter.Indent += 1;
-            foreach (var item in items)
-            {
-                this.PrintItem(textWriter, item);
-                this.PrintItems(textWriter, item.GetAllChildren());
-            }
-            textWriter.Indent -= 1;
         }
 
         private bool TypeSpecificComparerExists(Type type)
@@ -419,6 +413,41 @@ namespace deepequalitycomparer
             this.PrintResult(context);
 
             return Context.AllEqual(context);
+        }
+
+        private bool IsPureIEnumerable(object obj)
+        {
+            var type = obj.GetType();
+
+            if (type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Any()) return false;
+            var isIEnumerable = type.GetInterfaces().Any(i => i == typeof(IEnumerable));
+
+            return isIEnumerable;
+        }
+
+        private bool IsString(object obj)
+        {
+            return obj is string;
+        }
+
+        private void PrintItems(IndentedTextWriter textWriter, IEnumerable<Context> items)
+        {
+            textWriter.Indent += 1;
+            foreach (var item in items)
+            {
+                this.PrintItem(textWriter, item);
+                this.PrintItems(textWriter, item.GetAllChildren());
+            }
+            textWriter.Indent -= 1;
+        }
+
+        private void PrintItem(TextWriter textWriter, Context context)
+        {
+            if (this.logOnlyNotEqualItems &&
+                context.Result) return;
+
+            var itemEqual = context.Result ? "equal" : "not equal";
+            textWriter.WriteLine($"{context.Caption}: {itemEqual} - x: {context.XtoString} y: {context.YtoString}");
         }
 
         /// <summary>
@@ -472,11 +501,6 @@ namespace deepequalitycomparer
             return x.GetType() == y.GetType();
         }
 
-        public static Configuration CreateConfiguration()
-        {
-            return new Configuration();
-        }
-
         private static MethodInfo GetTypeSpecificEquals(object obj)
         {
             var type = obj.GetType();
@@ -487,16 +511,16 @@ namespace deepequalitycomparer
                 methods.FirstOrDefault(x => x.Name.Equals("Equals") && obj.GetType() == x.GetParameters().SingleOrDefault()?.ParameterType);
         }
 
+        public static Configuration CreateConfiguration()
+        {
+            return new Configuration();
+        }
+
         private static bool HasTypeSpecificEuquals(object obj)
         {
             var method = GetTypeSpecificEquals(obj);
 
             return method != null;
-        }
-
-        private static bool IsArray(object obj)
-        {
-            return obj.GetType().IsArray;
         }
 
         private static bool IsValueType(object x)
@@ -512,9 +536,9 @@ namespace deepequalitycomparer
             private readonly List<Type> typesToIgnore = new List<Type>();
 
             private bool ignoreIndexer;
+            private bool logOnlyNotEqualItems;
 
             private TextWriter loggingTextWriter;
-            private bool logOnlyNotEqualItems;
             private StringComparison? stringComparison;
 
             private bool treatNullAsEmptyString;
@@ -538,8 +562,15 @@ namespace deepequalitycomparer
                     this.stringComparison,
                     this.treatNullAsEmptyString,
                     this.ignoreIndexer,
-                    this.logOnlyNotEqualItems,
-                    this.comparerForSpecificType);
+                    this.logOnlyNotEqualItems);
+                    this.comparerForSpecificType, 
+					this.nullReplacements.Select(x=>Tuple.Create(x.Key, x.Value)).ToList().AsReadOnly());
+            }
+
+            public Configuration IgnorePropertyByType(Type type)
+            {
+                this.typesToIgnore.Add(type);
+                return this;
             }
 
             public Configuration IgnorePropertyByName(string nameOfProperty)
@@ -549,9 +580,10 @@ namespace deepequalitycomparer
                 return this;
             }
 
-            public Configuration IgnorePropertyByType(Type type)
+            public Configuration SetIgnoreIndexer(bool ignoreIndexer)
             {
-                this.typesToIgnore.Add(type);
+                this.ignoreIndexer = ignoreIndexer;
+
                 return this;
             }
 
@@ -565,6 +597,13 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            public Configuration SetLoggingTextWriter(TextWriter textWriter)
+            {
+                this.loggingTextWriter = textWriter;
+
+                return this;
+            }
+
             public Configuration RegisterEqualityComparerForType<T>(IEqualityComparer<T> comparer)
             {
                 if (comparer == null) throw new ArgumentNullException(nameof(comparer));
@@ -574,19 +613,14 @@ namespace deepequalitycomparer
                 return this;
             }
 
-            public Configuration SetIgnoreIndexer(bool ignoreIndexer)
+            public Configuration TreatNullAsEmptyString(bool treatNullAsEmptyString)
             {
-                this.ignoreIndexer = ignoreIndexer;
-
+                this.treatNullAsEmptyString = treatNullAsEmptyString;
                 return this;
             }
 
-            public Configuration SetLoggingTextWriter(TextWriter textWriter)
-            {
-                this.loggingTextWriter = textWriter;
+            private readonly Dictionary<Type, object> nullReplacements = new Dictionary<Type, object>();
 
-                return this;
-            }
 
             public Configuration SetLoggingTextWriter(TextWriter textWriter, bool logOnlyNotEqualItems)
             {
@@ -596,9 +630,10 @@ namespace deepequalitycomparer
                 return this;
             }
 
-            public Configuration TreatNullAsEmptyString(bool treatNullAsEmptyString)
+            public Configuration TreatNullAs<T>(T other)
             {
-                this.treatNullAsEmptyString = treatNullAsEmptyString;
+                this.nullReplacements[typeof(T)] = other;
+
                 return this;
             }
 
@@ -621,6 +656,11 @@ namespace deepequalitycomparer
                     return this.comparer.GetHashCode((T)obj);
                 }
             }
+        }
+
+        private static bool IsArray(object obj)
+        {
+            return obj.GetType().IsArray;
         }
 
         internal class Context

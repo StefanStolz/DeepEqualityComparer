@@ -58,6 +58,7 @@
     <Compile Include="CompareObjectsWithCollectionTests.cs" />
     <Compile Include="IgnorePropertiesByTypeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TreatNullAsOtherValue.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
