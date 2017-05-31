@@ -127,12 +127,21 @@ namespace deepequalitycomparer
                     this.stringComparison,
                     this.treatNullAsEmptyString,
                     this.ignoreIndexer,
-                    this.logOnlyNotEqualItems);
+                    this.logOnlyNotEqualItems, this.nullReplacements.Select(x=>Tuple.Create(x.Key, x.Value)).ToList().AsReadOnly());
             }
 
             public Configuration IgnorePropertyByType(Type type)
             {
                 this.typesToIgnore.Add(type);
+                return this;
+            }
+
+            private readonly Dictionary<Type, object> nullReplacements = new Dictionary<Type, object>();
+
+            public Configuration TreatNullAs<T>(T other)
+            {
+                this.nullReplacements[typeof(T)] = other;
+
                 return this;
             }
         }
@@ -142,13 +151,17 @@ namespace deepequalitycomparer
             return new Configuration();
         }
 
+        private readonly Dictionary<Type, object> nullReplacements = new Dictionary<Type, object>();
+
         private DeepEqualityComparer(
             TextWriter loggingTextWriter,
             IReadOnlyCollection<string> propertiesToIgnore,
             IReadOnlyCollection<Type> typesToIgnore,
             StringComparison? stringComparison,
             bool treatNullAsEmptyString,
-            bool ignoreIndexer, bool logOnlyNotEqualItems)
+            bool ignoreIndexer,
+            bool logOnlyNotEqualItems,
+            IReadOnlyCollection<Tuple<Type, object>> nullReplacements)
         {
             this.loggingTextWriter = loggingTextWriter;
             this.propertiesToIgnore = propertiesToIgnore;
@@ -157,6 +170,11 @@ namespace deepequalitycomparer
             this.treatNullAsEmptyString = treatNullAsEmptyString;
             this.ignoreIndexer = ignoreIndexer;
             this.logOnlyNotEqualItems = logOnlyNotEqualItems;
+
+            foreach (var nullReplacement in nullReplacements)
+            {
+                this.nullReplacements.Add(nullReplacement.Item1, nullReplacement.Item2);
+            }
         }
 
         public DeepEqualityComparer(TextWriter loggingTextWriter)
@@ -265,6 +283,18 @@ namespace deepequalitycomparer
                 }
             }
 
+            if (ReferenceEquals(x, null) ^ ReferenceEquals(y, null))
+            {
+                if (ReferenceEquals(x, null))
+                {
+                    x = GetNullReplacementValue(y.GetType());
+                }
+                else
+                {
+                    y = GetNullReplacementValue(x.GetType());
+                }
+            }
+
             if (ReferenceEquals(x, null))
             {
                 context.SetResult(false, "x == null");
@@ -326,6 +356,15 @@ namespace deepequalitycomparer
             }
 
             ArePropertiesEqual(context, x, y);
+        }
+
+        private object GetNullReplacementValue(Type type)
+        {
+            object result = null;
+
+            this.nullReplacements.TryGetValue(type, out result);
+
+            return result;
         }
 
         private bool IsString(object obj)
