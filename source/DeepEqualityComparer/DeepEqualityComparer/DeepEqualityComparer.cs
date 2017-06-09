@@ -562,7 +562,7 @@ namespace deepequalitycomparer
                     this.stringComparison,
                     this.treatNullAsEmptyString,
                     this.ignoreIndexer,
-                    this.logOnlyNotEqualItems);
+                    this.logOnlyNotEqualItems,
                     this.comparerForSpecificType, 
 					this.nullReplacements.Select(x=>Tuple.Create(x.Key, x.Value)).ToList().AsReadOnly());
             }
