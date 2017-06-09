@@ -70,7 +70,7 @@ namespace deepequalitycomparer
             bool ignoreIndexer,
             bool logOnlyNotEqualItems,
             IEnumerable<KeyValuePair<Type, IEqualityComparer>> comparerForSpecificType,
-			IReadOnlyCollection<Tuple<Type, object>> nullReplacements)
+			IEnumerable<Tuple<Type, object>> nullReplacements)
         {
             this.loggingTextWriter = loggingTextWriter;
             this.propertiesToIgnore = propertiesToIgnore;
@@ -93,14 +93,12 @@ namespace deepequalitycomparer
 
         public DeepEqualityComparer(TextWriter loggingTextWriter)
         {
-            if (loggingTextWriter == null) throw new ArgumentNullException(nameof(loggingTextWriter));
-            this.loggingTextWriter = loggingTextWriter;
+            this.loggingTextWriter = loggingTextWriter ?? throw new ArgumentNullException(nameof(loggingTextWriter));
         }
 
         private DeepEqualityComparer(TextWriter loggingTextWriter, bool logOnlyNotEqualItems)
         {
-            if (loggingTextWriter == null) throw new ArgumentNullException(nameof(loggingTextWriter));
-            this.loggingTextWriter = loggingTextWriter;
+            this.loggingTextWriter = loggingTextWriter ?? throw new ArgumentNullException(nameof(loggingTextWriter));
             this.logOnlyNotEqualItems = logOnlyNotEqualItems;
         }
 
@@ -261,7 +259,7 @@ namespace deepequalitycomparer
 
         private object GetNullReplacementValue(Type type)
         {
-            object result = null;
+            object result;
 
             this.nullReplacements.TryGetValue(type, out result);
 
@@ -481,7 +479,6 @@ namespace deepequalitycomparer
         /// <summary>
         /// Determines whether the specified objects are equal.
         /// </summary>
-        /// <typeparam name="T">The Type of the objects to compare.</typeparam>
         /// <param name="x">The first object of type T to compare.</param>
         /// <param name="y">The second object of type T to compare.</param>
         /// <returns>true if the specified objects are equal; otherwise, false.</returns>
