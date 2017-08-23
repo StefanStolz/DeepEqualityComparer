@@ -39,38 +39,99 @@ using System.Reflection;
 
 namespace deepequalitycomparer
 {
+#if NET35
+    public class Tuple<T1, T2>
+    {
+        public Tuple(T1 item1, T2 item2)
+        {
+            this.Item1 = item1;
+            this.Item2 = item2;
+        }
+
+        public T1 Item1 { get; }   
+        public T2 Item2 { get; }
+    }
+
+    public static class Tuple
+    {
+        public static Tuple<T1, T2> Create<T1, T2>(T1 item1, T2 item2)
+        {
+            return new Tuple<T1, T2>(item1, item2);
+        }
+    }
+#endif
+
+    public class DeepEqualityComparer<T> : DeepEqualityComparer, IEqualityComparer<T>
+    {
+        public DeepEqualityComparer()
+        { }
+
+        public DeepEqualityComparer(TextWriter loggingTextWriter,
+                                    ReadOnlyCollection<string> propertiesToIgnore,
+                                    ReadOnlyCollection<Type> typesToIgnore,
+                                    StringComparison? stringComparison,
+                                    bool treatNullAsEmptyString,
+                                    bool ignoreIndexer,
+                                    bool logOnlyNotEqualItems,
+                                    IEnumerable<KeyValuePair<Type, IEqualityComparer>>
+                                        comparerForSpecificType,
+                                    IEnumerable<Tuple<Type, object>> nullReplacements)
+            : base(loggingTextWriter,
+                   propertiesToIgnore,
+                   typesToIgnore,
+                   stringComparison,
+                   treatNullAsEmptyString,
+                   ignoreIndexer,
+                   logOnlyNotEqualItems,
+                   comparerForSpecificType,
+                   nullReplacements)
+        { }
+
+        public bool Equals(T x, T y)
+        {
+            return base.Equals(x, y);
+        }
+
+        public int GetHashCode(T obj)
+        {
+            return base.GetHashCode(obj);
+        }
+    }
+
     public class DeepEqualityComparer : IEqualityComparer
     {
         public static DeepEqualityComparer Default { get; } = new DeepEqualityComparer();
-
         public static DeepEqualityComparer DefaultWithConsoleOutput => new DeepEqualityComparer(Console.Out);
+        public static DeepEqualityComparer DefaultWithLogNotEqualToConsole =>
+            new DeepEqualityComparer(Console.Out, true);
 
-        public static DeepEqualityComparer DefaultWithLogNotEqualToConsole =>new DeepEqualityComparer(Console.Out, true);
-        private readonly Dictionary<Type, IEqualityComparer> comparerForSpecificType = new Dictionary<Type, IEqualityComparer>();
+        private readonly Dictionary<Type, IEqualityComparer> comparerForSpecificType =
+            new Dictionary<Type, IEqualityComparer>();
         private readonly bool ignoreIndexer;
 
         private readonly TextWriter loggingTextWriter;
         private readonly bool logOnlyNotEqualItems;
-        private readonly IReadOnlyCollection<string> propertiesToIgnore = new ReadOnlyCollection<string>(new string[0]);
-        private readonly StringComparison? stringComparison;
-        private readonly bool treatNullAsEmptyString;
-        private readonly IReadOnlyCollection<Type> typesToIgnore = new ReadOnlyCollection<Type>(new Type[0]);
-
-        private DeepEqualityComparer()
-        {}
 
         private readonly Dictionary<Type, object> nullReplacements = new Dictionary<Type, object>();
+        private readonly ReadOnlyCollection<string> propertiesToIgnore =
+            new ReadOnlyCollection<string>(new string[0]);
+        private readonly StringComparison? stringComparison;
+        private readonly bool treatNullAsEmptyString;
+        private readonly ReadOnlyCollection<Type> typesToIgnore = new ReadOnlyCollection<Type>(new Type[0]);
 
-        private DeepEqualityComparer(
+        protected DeepEqualityComparer()
+        { }
+
+        protected DeepEqualityComparer(
             TextWriter loggingTextWriter,
-            IReadOnlyCollection<string> propertiesToIgnore,
-            IReadOnlyCollection<Type> typesToIgnore,
+            ReadOnlyCollection<string> propertiesToIgnore,
+            ReadOnlyCollection<Type> typesToIgnore,
             StringComparison? stringComparison,
             bool treatNullAsEmptyString,
             bool ignoreIndexer,
             bool logOnlyNotEqualItems,
             IEnumerable<KeyValuePair<Type, IEqualityComparer>> comparerForSpecificType,
-			IEnumerable<Tuple<Type, object>> nullReplacements)
+            IEnumerable<Tuple<Type, object>> nullReplacements)
         {
             this.loggingTextWriter = loggingTextWriter;
             this.propertiesToIgnore = propertiesToIgnore;
@@ -80,34 +141,57 @@ namespace deepequalitycomparer
             this.ignoreIndexer = ignoreIndexer;
             this.logOnlyNotEqualItems = logOnlyNotEqualItems;
 
-            foreach (var keyValuePair in comparerForSpecificType)
-            {
+            foreach (var keyValuePair in comparerForSpecificType) {
                 this.comparerForSpecificType.Add(keyValuePair.Key, keyValuePair.Value);
             }
-			
-            foreach (var nullReplacement in nullReplacements)
-            {
+
+            foreach (var nullReplacement in nullReplacements) {
                 this.nullReplacements.Add(nullReplacement.Item1, nullReplacement.Item2);
-            }			
+            }
         }
 
         public DeepEqualityComparer(TextWriter loggingTextWriter)
         {
-            this.loggingTextWriter = loggingTextWriter ?? throw new ArgumentNullException(nameof(loggingTextWriter));
+            this.loggingTextWriter =
+                loggingTextWriter ?? throw new ArgumentNullException(nameof(loggingTextWriter));
         }
 
         private DeepEqualityComparer(TextWriter loggingTextWriter, bool logOnlyNotEqualItems)
         {
-            this.loggingTextWriter = loggingTextWriter ?? throw new ArgumentNullException(nameof(loggingTextWriter));
+            this.loggingTextWriter =
+                loggingTextWriter ?? throw new ArgumentNullException(nameof(loggingTextWriter));
             this.logOnlyNotEqualItems = logOnlyNotEqualItems;
+        }
+
+        /// <summary>
+        /// Determines whether the specified objects are equal.
+        /// </summary>
+        /// <param name="x">The first object to compare.</param>
+        /// <param name="y">The second object to compare.</param>
+        /// <returns>true if the specified objects are equal; otherwise, false.</returns>
+        public new bool Equals(object x, object y)
+        {
+            var context = new Context("(root)");
+            this.AreEqualInternal(context, x, y);
+
+            this.PrintResult(context);
+
+            return Context.AllEqual(context);
+        }
+
+        /// <inheritdoc />
+        public int GetHashCode(object obj)
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+
+            return 0;
         }
 
         internal void PrintResult(Context context)
         {
             if (this.loggingTextWriter == null) return;
 
-            using (var textWriter = new IndentedTextWriter(this.loggingTextWriter, "  "))
-            {
+            using (var textWriter = new IndentedTextWriter(this.loggingTextWriter, "  ")) {
                 textWriter.Indent = 0;
                 this.PrintItem(textWriter, context);
                 this.PrintItems(textWriter, context.GetAllChildren());
@@ -126,8 +210,7 @@ namespace deepequalitycomparer
             if (x.Length !=
                 y.Length) return false;
 
-            for (int i = 0; i < x.Length; i++)
-            {
+            for (int i = 0; i < x.Length; i++) {
                 this.AreEqualInternal(context.CreateChild($"[{i}]"), x.GetValue(i), y.GetValue(i));
             }
 
@@ -157,104 +240,157 @@ namespace deepequalitycomparer
         /// <param name="y">The second object</param>
         private void AreEqualInternal(Context context, object x, object y)
         {
-            context.SetPrintableValues(GetPrintableValue(x), GetPrintableValue(y));
+            context.SetPrintableValues(this.GetPrintableValue(x), this.GetPrintableValue(y));
 
-            if (ReferenceEquals(x, y))
-            {
+            if (ReferenceEquals(x, y)) {
                 context.SetResult(true, "Equal Reference");
                 return;
             }
 
-            if (this.treatNullAsEmptyString)
-            {
+            if (this.treatNullAsEmptyString) {
                 if (x is string ||
-                    y is string)
-                {
+                    y is string) {
                     x = x ?? string.Empty;
                     y = y ?? string.Empty;
                 }
             }
 
-            if (ReferenceEquals(x, null) ^ ReferenceEquals(y, null))
-            {
-                if (ReferenceEquals(x, null))
-                {
-                    x = GetNullReplacementValue(y.GetType());
+            if (ReferenceEquals(x, null) ^ ReferenceEquals(y, null)) {
+                if (ReferenceEquals(x, null)) {
+                    x = this.GetNullReplacementValue(y.GetType());
                 }
-                else
-                {
-                    y = GetNullReplacementValue(x.GetType());
+                else {
+                    y = this.GetNullReplacementValue(x.GetType());
                 }
             }
 
-            if (ReferenceEquals(x, null))
-            {
+            if (ReferenceEquals(x, null)) {
                 context.SetResult(false, "x == null");
                 return;
             }
-            if (ReferenceEquals(y, null))
-            {
+            if (ReferenceEquals(y, null)) {
                 context.SetResult(false, "y == null");
                 return;
             }
 
-            if (AreBothArrays(x, y))
-            {
+            if (AreBothArrays(x, y)) {
                 var value = this.AreArraysEqual(context, (Array)x, (Array)y);
                 context.SetResult(value, "Array");
                 return;
             }
 
-            if (AreBothPureIEnumerable(x, y))
-            {
-                var value = AreIEnumerablesEqual(context, x, y);
-                context.SetResult(value, "IEnumerable");
-                return;
-            }
-
-            if (!AreTypesEqual(x, y))
-            {
-                context.SetResult(false, "Types not equal");
-                return;
-            }
-
-            if (this.TypeSpecificComparerExists(x.GetType()))
-            {
-                var value = CompareWithTypeSpecificComparer(x, y);
-                context.SetResult(value, "Type Specifiy Comparer");
-                return;
-            }
-
-            if (IsValueType(x))
-            {
-                var value = x.Equals(y);
-                context.SetResult(value, "Valuetype");
-                return;
-            }
-
-            if (IsString(x))
-            {
-                var value = AreStringsEqual((string)x, (string)y);
-                context.SetResult(value, "String");
-                return;
-            }
-
-            if (HasTypeSpecificEuquals(x))
-            {
-                var value = AreEqualBySpecificEquals(x, y);
-                context.SetResult(value, "Equals");
-                return;
-            }
-
-            if (IsIEnumerable(x) &&
-                IsIEnumerable(y))
-            {
+            if (this.AreBothPureIEnumerable(x, y)) {
                 var value = this.AreIEnumerablesEqual(context, x, y);
                 context.SetResult(value, "IEnumerable");
                 return;
             }
 
-            ArePropertiesEqual(context, x, y);
+            if (!AreTypesEqual(x, y)) {
+                context.SetResult(false, "Types not equal");
+                return;
+            }
+
+            if (this.TypeSpecificComparerExists(x.GetType())) {
+                var value = this.CompareWithTypeSpecificComparer(x, y);
+                context.SetResult(value, "Type Specifiy Comparer");
+                return;
+            }
+
+            if (IsValueType(x)) {
+                var value = x.Equals(y);
+                context.SetResult(value, "Valuetype");
+                return;
+            }
+
+            if (this.IsString(x)) {
+                var value = this.AreStringsEqual((string)x, (string)y);
+                context.SetResult(value, "String");
+                return;
+            }
+
+            if (HasTypeSpecificEuquals(x)) {
+                var value = this.AreEqualBySpecificEquals(x, y);
+                context.SetResult(value, "Equals");
+                return;
+            }
+
+            if (this.IsIEnumerable(x) &&
+                this.IsIEnumerable(y)) {
+                var value = this.AreIEnumerablesEqual(context, x, y);
+                context.SetResult(value, "IEnumerable");
+                return;
+            }
+
+            this.ArePropertiesEqual(context, x, y);
+        }
+
+        private bool AreIEnumerablesEqual(Context context, object x, object y)
+        {
+            var listX = this.MakeArrayList(x);
+            var listY = this.MakeArrayList(y);
+
+            return this.AreArraysEqual(context, listX.ToArray(), listY.ToArray());
+        }
+
+        private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
+        {
+            if (this.ignoreIndexer) return true;
+            throw new NotSupportedException("Indexers are currently not supported");
+        }
+
+        /// <summary>
+        /// Tests all Properties of the objects for euqality.
+        /// </summary>
+        /// <param name="context">The Context of the equal operation</param>
+        /// <param name="x">The first object</param>
+        /// <param name="y">The second object</param>
+        private void ArePropertiesEqual(Context context, object x, object y)
+        {
+            if (x.GetType() != y.GetType())
+                throw new ArgumentNullException(nameof(y), "y must have the same type as x");
+
+            var properties = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            foreach (var propertyInfo in properties) {
+                if (!propertyInfo.CanRead) continue;
+                if (this.propertiesToIgnore.Contains(propertyInfo.Name)) continue;
+                if (this.typesToIgnore.Contains(propertyInfo.PropertyType)) continue;
+
+                if (!this.IsIndexer(propertyInfo)) {
+                    object valueOfX = propertyInfo.GetValue(x, null);
+                    object valueOfY = propertyInfo.GetValue(y, null);
+
+                    this.AreEqualInternal(context.CreateChild(propertyInfo.Name), valueOfX, valueOfY);
+                }
+                else {
+                    if (!this.AreIndexerEqual(propertyInfo, x, y)) {
+                        throw new NotImplementedException();
+                    }
+                }
+            }
+
+            context.SetResult(Context.AllChildrenEqual(context), "Properties");
+        }
+
+        private bool AreStringsEqual(string x, string y)
+        {
+            if (this.treatNullAsEmptyString) {
+                x = x ?? string.Empty;
+                y = y ?? string.Empty;
+            }
+
+            if (this.stringComparison.HasValue) {
+                return x.Equals(y, this.stringComparison.Value);
+            }
+
+            return x.Equals(y);
+        }
+
+        private bool CompareWithTypeSpecificComparer(object x, object y)
+        {
+            var comparer = this.comparerForSpecificType[x.GetType()];
+
+            return comparer.Equals(x, y);
         }
 
         private object GetNullReplacementValue(Type type)
@@ -266,58 +402,19 @@ namespace deepequalitycomparer
             return result;
         }
 
-        private bool CompareWithTypeSpecificComparer(object x, object y)
-        {
-            var comparer = this.comparerForSpecificType[x.GetType()];
-
-            return comparer.Equals(x, y);
-        }
-
-        private bool AreIEnumerablesEqual(Context context, object x, object y)
-        {
-            var listX = this.MakeArrayList(x);
-            var listY = this.MakeArrayList(y);
-
-            return AreArraysEqual(context, listX.ToArray(), listY.ToArray());
-        }
-
-        private bool AreStringsEqual(string x, string y)
-        {
-            if (this.treatNullAsEmptyString)
-            {
-                x = x ?? string.Empty;
-                y = y ?? string.Empty;
-            }
-
-            if (this.stringComparison.HasValue)
-            {
-                return x.Equals(y, this.stringComparison.Value);
-            }
-
-            return x.Equals(y);
-        }
-
         private string GetPrintableValue(object obj)
         {
             if (ReferenceEquals(obj, null)) return "(null)";
 
-            if (IsArray(obj))
-            {
+            if (IsArray(obj)) {
                 return "(array)";
             }
 
-            if (this.IsPureIEnumerable(obj))
-            {
+            if (this.IsPureIEnumerable(obj)) {
                 return "(IEnumerable)";
             }
 
             return obj.ToString();
-        }
-
-        private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
-        {
-            if (this.ignoreIndexer) return true;
-            throw new NotSupportedException("Indexers are currently not supported");
         }
 
         /// <summary>
@@ -334,83 +431,9 @@ namespace deepequalitycomparer
             return isIEnumerable;
         }
 
-        /// <summary>
-        /// Tests all Properties of the objects for euqality.
-        /// </summary>
-        /// <param name="context">The Context of the equal operation</param>
-        /// <param name="x">The first object</param>
-        /// <param name="y">The second object</param>
-        private void ArePropertiesEqual(Context context, object x, object y)
-        {
-            if (x.GetType() != y.GetType()) throw new ArgumentNullException(nameof(y), "y must have the same type as x");
-
-            var properties = x.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (var propertyInfo in properties)
-            {
-                if (!propertyInfo.CanRead) continue;
-                if (this.propertiesToIgnore.Contains(propertyInfo.Name)) continue;
-                if (this.typesToIgnore.Contains(propertyInfo.PropertyType)) continue;
-
-                if (!IsIndexer(propertyInfo))
-                {
-                    object valueOfX = propertyInfo.GetValue(x, null);
-                    object valueOfY = propertyInfo.GetValue(y, null);
-
-                    this.AreEqualInternal(context.CreateChild(propertyInfo.Name), valueOfX, valueOfY);
-                }
-                else
-                {
-                    if (!AreIndexerEqual(propertyInfo, x, y))
-                    {
-                        throw new NotImplementedException();
-                    }
-                }
-            }
-
-            context.SetResult(Context.AllChildrenEqual(context), "Properties");
-        }
-
         private bool IsIndexer(PropertyInfo propertyInfo)
         {
             return propertyInfo.GetIndexParameters().Length > 0;
-        }
-
-        private ArrayList MakeArrayList(object obj)
-        {
-            if (!IsIEnumerable(obj)) throw new ArgumentException("obj must be an IEnumerable");
-
-            var enumerable = (IEnumerable)obj;
-
-            var result = new ArrayList();
-
-            foreach (var value in enumerable)
-            {
-                result.Add(value);
-            }
-
-            return result;
-        }
-
-        private bool TypeSpecificComparerExists(Type type)
-        {
-            return this.comparerForSpecificType.ContainsKey(type);
-        }
-
-        /// <summary>
-        /// Determines whether the specified objects are equal.
-        /// </summary>
-        /// <param name="x">The first object to compare.</param>
-        /// <param name="y">The second object to compare.</param>
-        /// <returns>true if the specified objects are equal; otherwise, false.</returns>
-        public bool Equals(object x, object y)
-        {
-            var context = new Context("(root)");
-            this.AreEqualInternal(context, x, y);
-
-            this.PrintResult(context);
-
-            return Context.AllEqual(context);
         }
 
         private bool IsPureIEnumerable(object obj)
@@ -428,15 +451,19 @@ namespace deepequalitycomparer
             return obj is string;
         }
 
-        private void PrintItems(IndentedTextWriter textWriter, IEnumerable<Context> items)
+        private ArrayList MakeArrayList(object obj)
         {
-            textWriter.Indent += 1;
-            foreach (var item in items)
-            {
-                this.PrintItem(textWriter, item);
-                this.PrintItems(textWriter, item.GetAllChildren());
+            if (!this.IsIEnumerable(obj)) throw new ArgumentException("obj must be an IEnumerable");
+
+            var enumerable = (IEnumerable)obj;
+
+            var result = new ArrayList();
+
+            foreach (var value in enumerable) {
+                result.Add(value);
             }
-            textWriter.Indent -= 1;
+
+            return result;
         }
 
         private void PrintItem(TextWriter textWriter, Context context)
@@ -448,21 +475,19 @@ namespace deepequalitycomparer
             textWriter.WriteLine($"{context.Caption}: {itemEqual} - x: {context.XtoString} y: {context.YtoString}");
         }
 
-        /// <summary>
-        /// Always returns 0 to force a full compare
-        /// </summary>
-        /// <returns>
-        /// Always returns 0 to force a full compare
-        /// </returns>
-        /// <exception cref="T:System.ArgumentNullException">
-        /// The type of <paramref name="obj" /> is a reference type and
-        /// <paramref name="obj" /> is null.
-        /// </exception>
-        public int GetHashCode(object obj)
+        private void PrintItems(IndentedTextWriter textWriter, IEnumerable<Context> items)
         {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            textWriter.Indent += 1;
+            foreach (var item in items) {
+                this.PrintItem(textWriter, item);
+                this.PrintItems(textWriter, item.GetAllChildren());
+            }
+            textWriter.Indent -= 1;
+        }
 
-            return 0;
+        private bool TypeSpecificComparerExists(Type type)
+        {
+            return this.comparerForSpecificType.ContainsKey(type);
         }
 
         /// <summary>
@@ -498,6 +523,13 @@ namespace deepequalitycomparer
             return x.GetType() == y.GetType();
         }
 
+        public static Configuration CreateConfiguration()
+        {
+            return new Configuration();
+        }
+
+        public static DeepEqualityComparer<T> CreateDefault<T>() => new DeepEqualityComparer<T>();
+
         private static MethodInfo GetTypeSpecificEquals(object obj)
         {
             var type = obj.GetType();
@@ -505,12 +537,9 @@ namespace deepequalitycomparer
             var methods = type.GetMethods();
 
             return
-                methods.FirstOrDefault(x => x.Name.Equals("Equals") && obj.GetType() == x.GetParameters().SingleOrDefault()?.ParameterType);
-        }
-
-        public static Configuration CreateConfiguration()
-        {
-            return new Configuration();
+                methods.FirstOrDefault(x => x.Name.Equals("Equals") &&
+                                            obj.GetType() ==
+                                            x.GetParameters().SingleOrDefault()?.ParameterType);
         }
 
         private static bool HasTypeSpecificEuquals(object obj)
@@ -520,6 +549,11 @@ namespace deepequalitycomparer
             return method != null;
         }
 
+        private static bool IsArray(object obj)
+        {
+            return obj.GetType().IsArray;
+        }
+
         private static bool IsValueType(object x)
         {
             return x.GetType().IsValueType;
@@ -527,15 +561,15 @@ namespace deepequalitycomparer
 
         public class Configuration
         {
-            private readonly Dictionary<Type, IEqualityComparer> comparerForSpecificType = new Dictionary<Type, IEqualityComparer>();
-
+            private readonly Dictionary<Type, IEqualityComparer> comparerForSpecificType =
+                new Dictionary<Type, IEqualityComparer>();
+            private readonly Dictionary<Type, object> nullReplacements = new Dictionary<Type, object>();
             private readonly List<string> propertiesToIgnore = new List<string>();
             private readonly List<Type> typesToIgnore = new List<Type>();
-
             private bool ignoreIndexer;
-            private bool logOnlyNotEqualItems;
 
             private TextWriter loggingTextWriter;
+            private bool logOnlyNotEqualItems;
             private StringComparison? stringComparison;
 
             private bool treatNullAsEmptyString;
@@ -547,27 +581,44 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            public DeepEqualityComparer<T> CreateDeepEqualityComparer<T>()
+            {
+                var propsToIgnore = this.propertiesToIgnore.Distinct().ToList().AsReadOnly();
+                var typesToIgnore = this.typesToIgnore.Distinct().ToList().AsReadOnly();
+
+                return new DeepEqualityComparer<T>(
+                                                   this.loggingTextWriter,
+                                                   propsToIgnore,
+                                                   typesToIgnore,
+                                                   this.stringComparison,
+                                                   this.treatNullAsEmptyString,
+                                                   this.ignoreIndexer,
+                                                   this.logOnlyNotEqualItems,
+                                                   this.comparerForSpecificType,
+                                                   this.nullReplacements
+                                                       .Select(x => Tuple.Create(x.Key, x.Value))
+                                                       .ToList()
+                                                       .AsReadOnly());
+            }
+
             public DeepEqualityComparer CreateEqualityComparer()
             {
                 var propsToIgnore = this.propertiesToIgnore.Distinct().ToList().AsReadOnly();
                 var typesToIgnore = this.typesToIgnore.Distinct().ToList().AsReadOnly();
 
                 return new DeepEqualityComparer(
-                    this.loggingTextWriter,
-                    propsToIgnore,
-                    typesToIgnore,
-                    this.stringComparison,
-                    this.treatNullAsEmptyString,
-                    this.ignoreIndexer,
-                    this.logOnlyNotEqualItems,
-                    this.comparerForSpecificType, 
-					this.nullReplacements.Select(x=>Tuple.Create(x.Key, x.Value)).ToList().AsReadOnly());
-            }
-
-            public Configuration IgnorePropertyByType(Type type)
-            {
-                this.typesToIgnore.Add(type);
-                return this;
+                                                this.loggingTextWriter,
+                                                propsToIgnore,
+                                                typesToIgnore,
+                                                this.stringComparison,
+                                                this.treatNullAsEmptyString,
+                                                this.ignoreIndexer,
+                                                this.logOnlyNotEqualItems,
+                                                this.comparerForSpecificType,
+                                                this.nullReplacements
+                                                    .Select(x => Tuple.Create(x.Key, x.Value))
+                                                    .ToList()
+                                                    .AsReadOnly());
             }
 
             public Configuration IgnorePropertyByName(string nameOfProperty)
@@ -577,10 +628,9 @@ namespace deepequalitycomparer
                 return this;
             }
 
-            public Configuration SetIgnoreIndexer(bool ignoreIndexer)
+            public Configuration IgnorePropertyByType(Type type)
             {
-                this.ignoreIndexer = ignoreIndexer;
-
+                this.typesToIgnore.Add(type);
                 return this;
             }
 
@@ -594,13 +644,6 @@ namespace deepequalitycomparer
                 return this;
             }
 
-            public Configuration SetLoggingTextWriter(TextWriter textWriter)
-            {
-                this.loggingTextWriter = textWriter;
-
-                return this;
-            }
-
             public Configuration RegisterEqualityComparerForType<T>(IEqualityComparer<T> comparer)
             {
                 if (comparer == null) throw new ArgumentNullException(nameof(comparer));
@@ -610,14 +653,19 @@ namespace deepequalitycomparer
                 return this;
             }
 
-            public Configuration TreatNullAsEmptyString(bool treatNullAsEmptyString)
+            public Configuration SetIgnoreIndexer(bool ignoreIndexer)
             {
-                this.treatNullAsEmptyString = treatNullAsEmptyString;
+                this.ignoreIndexer = ignoreIndexer;
+
                 return this;
             }
 
-            private readonly Dictionary<Type, object> nullReplacements = new Dictionary<Type, object>();
+            public Configuration SetLoggingTextWriter(TextWriter textWriter)
+            {
+                this.loggingTextWriter = textWriter;
 
+                return this;
+            }
 
             public Configuration SetLoggingTextWriter(TextWriter textWriter, bool logOnlyNotEqualItems)
             {
@@ -631,6 +679,12 @@ namespace deepequalitycomparer
             {
                 this.nullReplacements[typeof(T)] = other;
 
+                return this;
+            }
+
+            public Configuration TreatNullAsEmptyString(bool treatNullAsEmptyString)
+            {
+                this.treatNullAsEmptyString = treatNullAsEmptyString;
                 return this;
             }
 
@@ -655,18 +709,18 @@ namespace deepequalitycomparer
             }
         }
 
-        private static bool IsArray(object obj)
-        {
-            return obj.GetType().IsArray;
-        }
-
         internal class Context
         {
             private readonly List<Context> children = new List<Context>();
 
             public Context(string caption)
             {
-                if (string.IsNullOrWhiteSpace(caption)) throw new ArgumentException("Value cannot be null or whitespace.", nameof(caption));
+#if NET35
+                if (string.IsNullOrEmpty(caption?.Trim())) throw new ArgumentException("Value cannot be null or whitespace.", nameof(caption));
+#else
+                if (string.IsNullOrWhiteSpace(caption))
+                    throw new ArgumentException("Value cannot be null or whitespace.", nameof(caption));
+#endif
                 this.Caption = caption;
             }
 
@@ -684,12 +738,10 @@ namespace deepequalitycomparer
 
             public IEnumerable<Context> GetAllChildren()
             {
-                foreach (var child in this.children)
-                {
+                foreach (var child in this.children) {
                     yield return child;
 
-                    foreach (var grandChild in child.GetAllChildren())
-                    {
+                    foreach (var grandChild in child.GetAllChildren()) {
                         yield return grandChild;
                     }
                 }

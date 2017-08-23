@@ -35,6 +35,9 @@ using NUnit.Framework;
 
 namespace deepequalitycomparer.tests
 {
+    /// <summary>
+    /// These are some tests to explore APIs
+    /// </summary>
     [TestFixture]
     [Explicit]
     public sealed class ExplorationTests

@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.IO;
 
 using deepequalitycomparer;
 
 using NUnit.Framework;
 
-namespace UsageOfNugetPackage
+namespace UsageOfNetStandardNugetPackage
 {
     [TestFixture]
     public class UseWithNUnit
@@ -36,7 +35,7 @@ namespace UsageOfNugetPackage
             public void CompareWithLoggingToConsole()
             {
                 var so1 = new SomeObject { Number = 12, Text = "abc" };
-                var so2 = new SomeObject { Number = 12, Text = "abc" };
+                var so2 = new SomeObject { Number = 12, Text = "abcd" };
 
                 Assert.That(so1, Is.EqualTo(so2).Using(DeepEqualityComparer.DefaultWithConsoleOutput));
             }
@@ -45,7 +44,7 @@ namespace UsageOfNugetPackage
             public void LogToTextWriter()
             {
                 var so1 = new SomeObject { Number = 12, Text = "abc" };
-                var so2 = new SomeObject { Number = 12, Text = "abc" };
+                var so2 = new SomeObject { Number = 12, Text = "abcd" };
 
                 var textWriter = new StringWriter();
 

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DeepEqualityComparer" Version="2.0.2-alpha" />
+    <PackageReference Include="NUnit" Version="3.7.1" />
+  </ItemGroup>
+
+</Project>
