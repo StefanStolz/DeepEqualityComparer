@@ -42,7 +42,7 @@ namespace UsageInNetCoreUnitTest
             var so1 = new SomeObject { Number = 12, Text = "abc" };
             var so2 = new SomeObject { Number = 12, Text = "abc" };
 
-            Assert.Equal(so2, so1, DeepEqualityComparer.DefaultGeneric<SomeObject>());
+            Assert.Equal(so2, so1, DeepEqualityComparer.CreateDefault<SomeObject>());
         }
 
         private class SomeObject
