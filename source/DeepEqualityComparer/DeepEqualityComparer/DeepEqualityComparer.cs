@@ -296,9 +296,17 @@ namespace deepequalitycomparer
                 return;
             }
 
-            if (IsValueType(x)) {
+            if (IsPrimitiveValueType(x)) {
                 var value = x.Equals(y);
+                
                 context.SetResult(value, "Valuetype");
+                return;
+            }
+
+            if (IsEnum(x)) {
+                var value = x.Equals(y);
+
+                context.SetResult(value, "Enum");
                 return;
             }
 
@@ -310,8 +318,10 @@ namespace deepequalitycomparer
 
             if (HasTypeSpecificEuquals(x)) {
                 var value = this.AreEqualBySpecificEquals(x, y);
-                context.SetResult(value, "Equals");
-                return;
+                if (value) {
+                    context.SetResult(true, "Equals");
+                    return;
+                }
             }
 
             if (this.IsIEnumerable(x) &&
@@ -322,6 +332,11 @@ namespace deepequalitycomparer
             }
 
             this.ArePropertiesEqual(context, x, y);
+        }
+
+        private bool IsEnum(object x)
+        {
+            return x.GetType().IsEnum;
         }
 
         private bool AreIEnumerablesEqual(Context context, object x, object y)
@@ -554,9 +569,10 @@ namespace deepequalitycomparer
             return obj.GetType().IsArray;
         }
 
-        private static bool IsValueType(object x)
+        private static bool IsPrimitiveValueType(object x)
         {
-            return x.GetType().IsValueType;
+            var type = x.GetType();
+            return type.IsValueType && type.IsPrimitive;
         }
 
         public class Configuration
