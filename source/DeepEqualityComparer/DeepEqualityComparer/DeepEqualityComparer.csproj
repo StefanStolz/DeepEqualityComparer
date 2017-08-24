@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net40;netstandard2.0;net35</TargetFrameworks>
-    <Version>2.0.8</Version>
+    <Version>2.0.9</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>StefanStolz</Authors>
     <Company />
@@ -21,8 +21,8 @@
 Specify Comparers for specific Types
 Ignore Properties by Name
 Ignore Properties by Type</PackageReleaseNotes>
-    <AssemblyVersion>2.0.8.0</AssemblyVersion>
-    <FileVersion>2.0.8.0</FileVersion>
+    <AssemblyVersion>2.0.9.0</AssemblyVersion>
+    <FileVersion>2.0.9.0</FileVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <DefineConstants>NETSTANDARD;NETSTANDARD2_0</DefineConstants>
@@ -30,7 +30,13 @@ Ignore Properties by Type</PackageReleaseNotes>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net35'">
     <DefineConstants>NET35</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <DocumentationFile></DocumentationFile>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+    <DocumentationFile>bin\Release\netstandard2.0\DeepEqualityComparer.xml</DocumentationFile>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
+    <DocumentationFile>bin\Release\net40\DeepEqualityComparer.xml</DocumentationFile>
+  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net35|AnyCPU'">
+        <DocumentationFile>bin\Release\net35\DeepEqualityComparer.xml</DocumentationFile>
+    </PropertyGroup>
 </Project>

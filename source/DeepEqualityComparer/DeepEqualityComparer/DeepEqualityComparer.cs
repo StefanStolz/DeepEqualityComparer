@@ -649,6 +649,11 @@ namespace deepequalitycomparer
                                                     .AsReadOnly());
             }
 
+            /// <summary>
+            /// Ignores all Properties with the specified Name.
+            /// </summary>
+            /// <param name="nameOfProperty">The Name of the Property to ignore</param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration IgnorePropertyByName(string nameOfProperty)
             {
                 this.propertiesToIgnore.Add(nameOfProperty);
@@ -656,12 +661,24 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            /// <summary>
+            /// Ignores all Properties with the specified Type.
+            /// </summary>
+            /// <param name="type">The Type to ignore</param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration IgnorePropertyByType(Type type)
             {
                 this.typesToIgnore.Add(type);
                 return this;
             }
 
+            /// <summary>
+            /// Registers an <see cref="IEqualityComparer"/> that will be used to compare
+            /// Properties with the specified Type.
+            /// </summary>
+            /// <param name="type">The Type where the <paramref name="comparer"/> is responsible.</param>
+            /// <param name="comparer">An <see cref="IEqualityComparer"/></param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration RegisterEqualityComparerForType(Type type, IEqualityComparer comparer)
             {
                 if (type == null) throw new ArgumentNullException(nameof(type));
@@ -672,6 +689,13 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            /// <summary>
+            /// Registers an <see cref="IEqualityComparer"/> that will be used to compare
+            /// Properties with the specified Type.
+            /// </summary>
+            /// <typeparam name="T">The Type where the <paramref name="comparer"/> is responsible.</typeparam>
+            /// <param name="comparer">An <see cref="IEqualityComparer"/></param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration RegisterEqualityComparerForType<T>(IEqualityComparer<T> comparer)
             {
                 if (comparer == null) throw new ArgumentNullException(nameof(comparer));
@@ -681,6 +705,11 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            /// <summary>
+            /// Configures whether to ignore Indexers or not
+            /// </summary>
+            /// <param name="ignoreIndexer"><c>true</c> to ignore Indexers; otherwise <c>false</c></param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration SetIgnoreIndexer(bool ignoreIndexer)
             {
                 this.ignoreIndexer = ignoreIndexer;
@@ -688,6 +717,11 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            /// <summary>
+            /// Sets a <see cref="TextWriter"/> that receives the Logging-Output.
+            /// </summary>
+            /// <param name="textWriter">An instance of <see cref="TextWriter"/></param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration SetLoggingTextWriter(TextWriter textWriter)
             {
                 this.loggingTextWriter = textWriter;
@@ -695,6 +729,12 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            /// <summary>
+            /// Sets a <see cref="TextWriter"/> that receives the Logging-Output.
+            /// </summary>
+            /// <param name="textWriter">An instance of <see cref="TextWriter"/></param>
+            /// <param name="logOnlyNotEqualItems"><c>true</c> to log only not equal items; otherwise <c>false</c></param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration SetLoggingTextWriter(TextWriter textWriter, bool logOnlyNotEqualItems)
             {
                 this.loggingTextWriter = textWriter;
@@ -703,6 +743,12 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            /// <summary>
+            /// Configures a substitude if a property is <c>null</c>
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="other"></param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration TreatNullAs<T>(T other)
             {
                 this.nullReplacements[typeof(T)] = other;
@@ -710,6 +756,11 @@ namespace deepequalitycomparer
                 return this;
             }
 
+            /// <summary>
+            /// Configures the Comparer to treat null and empty strings as equal
+            /// </summary>
+            /// <param name="treatNullAsEmptyString"><c>true</c> to treat null and empty strings as equal; otherwise <c>false</c></param>
+            /// <returns>An instance of the <see cref="Configuration"/></returns>
             public Configuration TreatNullAsEmptyString(bool treatNullAsEmptyString)
             {
                 this.treatNullAsEmptyString = treatNullAsEmptyString;
