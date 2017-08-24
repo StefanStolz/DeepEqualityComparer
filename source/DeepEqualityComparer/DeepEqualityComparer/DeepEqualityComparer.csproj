@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net40;netstandard2.0;net35</TargetFrameworks>
-    <Version>2.0.7-alpha</Version>
+    <Version>2.0.8</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>StefanStolz</Authors>
     <Company />
@@ -13,10 +13,16 @@
     <PackageLicenseUrl>https://raw.githubusercontent.com/StefanStolz/DeepEqualityComparer/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/StefanStolz/DeepEqualityComparer</PackageProjectUrl>
     <PackageTags>IEqualityComparer Comparer</PackageTags>
-    <PackageReleaseNotes>.NET Standard support
-.NET 3.5 support</PackageReleaseNotes>
-    <AssemblyVersion>2.0.7.0</AssemblyVersion>
-    <FileVersion>2.0.7.0</FileVersion>
+    <PackageReleaseNotes>New in 2.x
+.NET Standard 2.0 support
+.NET 3.5 support
+
+"Old" Features
+Specify Comparers for specific Types
+Ignore Properties by Name
+Ignore Properties by Type</PackageReleaseNotes>
+    <AssemblyVersion>2.0.8.0</AssemblyVersion>
+    <FileVersion>2.0.8.0</FileVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <DefineConstants>NETSTANDARD;NETSTANDARD2_0</DefineConstants>

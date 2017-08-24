@@ -57,6 +57,7 @@
     <Compile Include="CompareObjectReferencesTests.cs" />
     <Compile Include="CompareWithLoggingTests.cs" />
     <Compile Include="ContextTests.cs" />
+    <Compile Include="CreateGenericInstanceTests.cs" />
     <Compile Include="ExplorationTests.cs" />
     <Compile Include="IgnorePropertiesByNameTests.cs" />
     <Compile Include="CompareObjectsWithCollectionTests.cs" />

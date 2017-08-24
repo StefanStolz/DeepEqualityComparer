@@ -66,6 +66,14 @@ namespace deepequalitycomparer
         public DeepEqualityComparer()
         { }
 
+        public DeepEqualityComparer(TextWriter loggingTextWriter)
+            : base(loggingTextWriter)
+        { }
+
+        public DeepEqualityComparer(TextWriter loggingTextWriter, bool logOnlyNotEqualItems)
+            : base(loggingTextWriter, logOnlyNotEqualItems)
+        { }
+
         public DeepEqualityComparer(TextWriter loggingTextWriter,
                                     ReadOnlyCollection<string> propertiesToIgnore,
                                     ReadOnlyCollection<Type> typesToIgnore,
@@ -156,7 +164,7 @@ namespace deepequalitycomparer
                 loggingTextWriter ?? throw new ArgumentNullException(nameof(loggingTextWriter));
         }
 
-        private DeepEqualityComparer(TextWriter loggingTextWriter, bool logOnlyNotEqualItems)
+        protected DeepEqualityComparer(TextWriter loggingTextWriter, bool logOnlyNotEqualItems)
         {
             this.loggingTextWriter =
                 loggingTextWriter ?? throw new ArgumentNullException(nameof(loggingTextWriter));
@@ -298,12 +306,12 @@ namespace deepequalitycomparer
 
             if (IsPrimitiveValueType(x)) {
                 var value = x.Equals(y);
-                
+
                 context.SetResult(value, "Valuetype");
                 return;
             }
 
-            if (IsEnum(x)) {
+            if (this.IsEnum(x)) {
                 var value = x.Equals(y);
 
                 context.SetResult(value, "Enum");
@@ -332,11 +340,6 @@ namespace deepequalitycomparer
             }
 
             this.ArePropertiesEqual(context, x, y);
-        }
-
-        private bool IsEnum(object x)
-        {
-            return x.GetType().IsEnum;
         }
 
         private bool AreIEnumerablesEqual(Context context, object x, object y)
@@ -410,9 +413,7 @@ namespace deepequalitycomparer
 
         private object GetNullReplacementValue(Type type)
         {
-            object result;
-
-            this.nullReplacements.TryGetValue(type, out result);
+            this.nullReplacements.TryGetValue(type, out var result);
 
             return result;
         }
@@ -430,6 +431,11 @@ namespace deepequalitycomparer
             }
 
             return obj.ToString();
+        }
+
+        private bool IsEnum(object x)
+        {
+            return x.GetType().IsEnum;
         }
 
         /// <summary>
@@ -538,12 +544,18 @@ namespace deepequalitycomparer
             return x.GetType() == y.GetType();
         }
 
+        public static DeepEqualityComparer<T> CraeteDefaultWithLogOnlyNotEqualToConsole<T>() =>
+            new DeepEqualityComparer<T>(Console.Out, true);
+
         public static Configuration CreateConfiguration()
         {
             return new Configuration();
         }
 
         public static DeepEqualityComparer<T> CreateDefault<T>() => new DeepEqualityComparer<T>();
+
+        public static DeepEqualityComparer<T> CreateDefaultWithConsoleOutput<T>() =>
+            new DeepEqualityComparer<T>(Console.Out);
 
         private static MethodInfo GetTypeSpecificEquals(object obj)
         {
