@@ -2,7 +2,7 @@
 
 // MIT License
 // 
-// Copyright (c) 2016 Stefan Stolz
+// Copyright (c) 2019 Stefan Stolz
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,6 @@
 
 #region using directives
 
-using System;
-
 using NUnit.Framework;
 
 #endregion
@@ -38,9 +36,9 @@ namespace deepequalitycomparer.tests
     public sealed class CompareObjectReferencesTests
     {
         [Test]
-        public void CompareObjectWithNull()
+        public void CompareNullWithNull()
         {
-            Assert.That(DeepEqualityComparer.AreEqual(new object(), null), Is.False);
+            Assert.That(DeepEqualityComparer.AreEqual(null, null), Is.True);
         }
 
         [Test]
@@ -57,9 +55,9 @@ namespace deepequalitycomparer.tests
         }
 
         [Test]
-        public void CompareNullWithNull()
+        public void CompareObjectWithNull()
         {
-            Assert.That(DeepEqualityComparer.AreEqual(null, null), Is.True);
+            Assert.That(DeepEqualityComparer.AreEqual(new object(), null), Is.False);
         }
     }
 }

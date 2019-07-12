@@ -2,7 +2,7 @@
 
 // MIT License
 // 
-// Copyright (c) 2016 Stefan Stolz
+// Copyright (c) 2019 Stefan Stolz
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -64,8 +64,8 @@ namespace deepequalitycomparer.tests
 
             var comparer =
                 DeepEqualityComparer.CreateConfiguration()
-                    .ConfigureStringComparison(StringComparison.OrdinalIgnoreCase)
-                    .CreateEqualityComparer();
+                                    .ConfigureStringComparison(StringComparison.OrdinalIgnoreCase)
+                                    .CreateEqualityComparer();
 
             Assert.That(comparer.Equals(text1, text2), Is.True);
         }
@@ -74,9 +74,9 @@ namespace deepequalitycomparer.tests
         public void TreatNullAsEmptyString()
         {
             var comparer = DeepEqualityComparer
-                .CreateConfiguration()
-                .TreatNullAsEmptyString(true)
-                .CreateEqualityComparer();
+                           .CreateConfiguration()
+                           .TreatNullAsEmptyString(true)
+                           .CreateEqualityComparer();
 
             Assert.That(comparer.Equals(null, string.Empty), Is.True);
             Assert.That(comparer.Equals(string.Empty, null), Is.True);

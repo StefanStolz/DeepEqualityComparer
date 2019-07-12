@@ -2,7 +2,7 @@
 
 // MIT License
 // 
-// Copyright (c) 2016 Stefan Stolz
+// Copyright (c) 2019 Stefan Stolz
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,8 +51,7 @@ namespace deepequalitycomparer.tests
 
             var method = type.GetMethod("Equals", new Type[] { type });
 
-            if (method != null)
-            {
+            if (method != null) {
                 var result = method.Invoke(text, new object[] { "shibby" });
             }
         }
@@ -70,8 +69,7 @@ namespace deepequalitycomparer.tests
 
             int? length = null;
 
-            if (lengthProp != null)
-            {
+            if (lengthProp != null) {
                 length = (int)lengthProp.GetValue(text);
             }
 
@@ -81,10 +79,8 @@ namespace deepequalitycomparer.tests
 
             if (parameters.Length == 1 &&
                 parameters[0].ParameterType == typeof(int) &&
-                length.HasValue)
-            {
-                for (int i = 0; i < length.Value; i++)
-                {
+                length.HasValue) {
+                for (int i = 0; i < length.Value; i++) {
                     var value = charsProp.GetValue(text, new object[] { i });
                 }
             }

@@ -1,16 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net40;netstandard2.0;net35</TargetFrameworks>
-        <Version>2.0.10</Version>
+        <Version>2.0.10-beta</Version>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Authors>StefanStolz</Authors>
         <Company />
         <PackageId>DeepEqualityComparer</PackageId>
         <Product />
         <Description>Generic IEqualityComparer which performs a deep comparison of object trees</Description>
-        <Copyright>Copyright 2017 by Stefan Stolz</Copyright>
-        <PackageLicenseUrl>https://raw.githubusercontent.com/StefanStolz/DeepEqualityComparer/master/LICENSE</PackageLicenseUrl>
+        <Copyright>Copyright 2019 by Stefan Stolz</Copyright>
+        <PackageLicenseUrl></PackageLicenseUrl>
         <PackageProjectUrl>https://github.com/StefanStolz/DeepEqualityComparer</PackageProjectUrl>
         <PackageTags>IEqualityComparer Comparer</PackageTags>
         <PackageReleaseNotes>
@@ -24,12 +24,13 @@
             Ignore Properties by Name
             Ignore Properties by Type
 </PackageReleaseNotes>
-        <AssemblyVersion>2.0.9.0</AssemblyVersion>
-        <FileVersion>2.0.9.0</FileVersion>
+        <AssemblyVersion>2.0.10.0</AssemblyVersion>
+        <FileVersion>2.0.10.0</FileVersion>
     </PropertyGroup>
     <PropertyGroup>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
         <DefineConstants>NETSTANDARD;NETSTANDARD2_0</DefineConstants>
@@ -46,4 +47,10 @@
     <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net35|AnyCPU'">
         <DocumentationFile>bin\Release\net35\DeepEqualityComparer.xml</DocumentationFile>
     </PropertyGroup>
+    <ItemGroup>
+      <None Include="..\..\..\LICENSE">
+        <Pack>True</Pack>
+        <PackagePath></PackagePath>
+      </None>
+    </ItemGroup>
 </Project>

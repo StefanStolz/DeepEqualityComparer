@@ -2,7 +2,7 @@
 
 // MIT License
 // 
-// Copyright (c) 2017 Stefan Stolz
+// Copyright (c) 2019 Stefan Stolz
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,6 @@
 
 #region using directives
 
-using System;
-
 using NUnit.Framework;
 
 #endregion
@@ -44,9 +42,9 @@ namespace deepequalitycomparer.tests
             var instance2 = new SomeType { Text = "X", Number = 12 };
 
             var sut = DeepEqualityComparer
-                .CreateConfiguration()
-                .IgnorePropertyByName("Text")
-                .CreateEqualityComparer();
+                      .CreateConfiguration()
+                      .IgnorePropertyByName("Text")
+                      .CreateEqualityComparer();
 
             Assert.That(instance1, Is.EqualTo(instance2).Using(sut));
         }

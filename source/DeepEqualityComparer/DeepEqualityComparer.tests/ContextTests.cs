@@ -2,7 +2,7 @@
 
 // MIT License
 // 
-// Copyright (c) 2016 Stefan Stolz
+// Copyright (c) 2019 Stefan Stolz
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@
 
 #region using directives
 
-using System;
 using System.Linq;
 
 using NUnit.Framework;
@@ -44,13 +43,11 @@ namespace deepequalitycomparer.tests
             var root = new DeepEqualityComparer.Context("(root)");
             root.SetResult(true, "shibby");
 
-            for (int i = 0; i < 10; i++)
-            {
+            for (int i = 0; i < 10; i++) {
                 var child = root.CreateChild($"[{i}]");
                 child.SetResult(true, "xxxx");
 
-                for (int j = 0; j < 20; j++)
-                {
+                for (int j = 0; j < 20; j++) {
                     child.CreateChild($"XXX {j}").SetResult(true, "yyy");
                 }
             }
@@ -65,8 +62,7 @@ namespace deepequalitycomparer.tests
 
             var parent = root;
 
-            for (int i = 0; i < 10; i++)
-            {
+            for (int i = 0; i < 10; i++) {
                 parent = parent.CreateChild($"{i}");
             }
 

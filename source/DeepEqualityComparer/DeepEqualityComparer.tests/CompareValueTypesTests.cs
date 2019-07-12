@@ -2,7 +2,7 @@
 
 // MIT License
 // 
-// Copyright (c) 2016 Stefan Stolz
+// Copyright (c) 2019 Stefan Stolz
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,6 @@
 #region using directives
 
 using System;
-using System.Diagnostics;
 
 using NUnit.Framework;
 
@@ -103,13 +102,13 @@ namespace deepequalitycomparer.tests
 
             public bool Equals(StructWithEquals other)
             {
-                return Id.Equals(other.Id);
+                return this.Id.Equals(other.Id);
             }
 
             public override bool Equals(object obj)
             {
                 if (ReferenceEquals(null, obj)) return false;
-                return obj is StructWithEquals && Equals((StructWithEquals)obj);
+                return obj is StructWithEquals && this.Equals((StructWithEquals)obj);
             }
 
             public static bool operator !=(StructWithEquals a, StructWithEquals b)
@@ -124,7 +123,7 @@ namespace deepequalitycomparer.tests
 
             public override int GetHashCode()
             {
-                return Id.GetHashCode();
+                return this.Id.GetHashCode();
             }
 
             public override string ToString()
