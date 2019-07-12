@@ -1,41 +1,48 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net40;netstandard2.0;net35</TargetFrameworks>
-    <Version>2.0.9</Version>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>StefanStolz</Authors>
-    <Company />
-    <PackageId>DeepEqualityComparer</PackageId>
-    <Product />
-    <Description>Generic IEqualityComparer which performs a deep comparison of object trees</Description>
-    <Copyright>Copyright 2017 by Stefan Stolz</Copyright>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/StefanStolz/DeepEqualityComparer/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/StefanStolz/DeepEqualityComparer</PackageProjectUrl>
-    <PackageTags>IEqualityComparer Comparer</PackageTags>
-    <PackageReleaseNotes>New in 2.x
-.NET Standard 2.0 support
-.NET 3.5 support
+    <PropertyGroup>
+        <TargetFrameworks>net40;netstandard2.0;net35</TargetFrameworks>
+        <Version>2.0.10</Version>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Authors>StefanStolz</Authors>
+        <Company />
+        <PackageId>DeepEqualityComparer</PackageId>
+        <Product />
+        <Description>Generic IEqualityComparer which performs a deep comparison of object trees</Description>
+        <Copyright>Copyright 2017 by Stefan Stolz</Copyright>
+        <PackageLicenseUrl>https://raw.githubusercontent.com/StefanStolz/DeepEqualityComparer/master/LICENSE</PackageLicenseUrl>
+        <PackageProjectUrl>https://github.com/StefanStolz/DeepEqualityComparer</PackageProjectUrl>
+        <PackageTags>IEqualityComparer Comparer</PackageTags>
+        <PackageReleaseNotes>
 
-"Old" Features
-Specify Comparers for specific Types
-Ignore Properties by Name
-Ignore Properties by Type</PackageReleaseNotes>
-    <AssemblyVersion>2.0.9.0</AssemblyVersion>
-    <FileVersion>2.0.9.0</FileVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
-    <DefineConstants>NETSTANDARD;NETSTANDARD2_0</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net35'">
-    <DefineConstants>NET35</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\DeepEqualityComparer.xml</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
-    <DocumentationFile>bin\Release\net40\DeepEqualityComparer.xml</DocumentationFile>
-  </PropertyGroup>
+            New in 2.x
+            .NET Standard 2.0 support
+            .NET 3.5 support
+
+            "Old" Features
+            Specify Comparers for specific Types
+            Ignore Properties by Name
+            Ignore Properties by Type
+</PackageReleaseNotes>
+        <AssemblyVersion>2.0.9.0</AssemblyVersion>
+        <FileVersion>2.0.9.0</FileVersion>
+    </PropertyGroup>
+    <PropertyGroup>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+        <DefineConstants>NETSTANDARD;NETSTANDARD2_0</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'net35'">
+        <DefineConstants>NET35</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+        <DocumentationFile>bin\Release\netstandard2.0\DeepEqualityComparer.xml</DocumentationFile>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
+        <DocumentationFile>bin\Release\net40\DeepEqualityComparer.xml</DocumentationFile>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net35|AnyCPU'">
         <DocumentationFile>bin\Release\net35\DeepEqualityComparer.xml</DocumentationFile>
     </PropertyGroup>

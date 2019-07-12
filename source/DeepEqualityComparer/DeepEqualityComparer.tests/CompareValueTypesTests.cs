@@ -27,6 +27,7 @@
 #region using directives
 
 using System;
+using System.Diagnostics;
 
 using NUnit.Framework;
 
@@ -63,6 +64,17 @@ namespace deepequalitycomparer.tests
             Assert.That(DeepEqualityComparer.AreEqual(struct1, struct3), Is.False);
         }
 
+        [Test]
+        public void CompareStructWithEqulals()
+        {
+            var s1 = new StructWithEquals(new Guid("1C569499-61CA-444D-BC2C-55D44A7CAED4"));
+            var s2 = new StructWithEquals(new Guid("1C569499-61CA-444D-BC2C-55D44A7CAED4"));
+            var s3 = new StructWithEquals(new Guid("9BBADE46-8824-4927-81DD-2987AA035515"));
+
+            Assert.That(DeepEqualityComparer.Default.Equals(s1, s2), Is.True);
+            Assert.That(DeepEqualityComparer.Default.Equals(s1, s3), Is.False);
+        }
+
         private enum SomeEnum
         {
             Value1,
@@ -73,6 +85,52 @@ namespace deepequalitycomparer.tests
         {
             public int Value { get; set; }
             public short Short { get; set; }
+        }
+
+        public struct StructWithEquals : IEquatable<StructWithEquals>
+        {
+            public Guid Id { get; }
+
+            public StructWithEquals(Guid id)
+            {
+                this.Id = id;
+            }
+
+            public static StructWithEquals CreateNew()
+            {
+                return new StructWithEquals(Guid.NewGuid());
+            }
+
+            public bool Equals(StructWithEquals other)
+            {
+                return Id.Equals(other.Id);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                return obj is StructWithEquals && Equals((StructWithEquals)obj);
+            }
+
+            public static bool operator !=(StructWithEquals a, StructWithEquals b)
+            {
+                return !(a == b);
+            }
+
+            public static bool operator ==(StructWithEquals a, StructWithEquals b)
+            {
+                return a.Equals(b);
+            }
+
+            public override int GetHashCode()
+            {
+                return Id.GetHashCode();
+            }
+
+            public override string ToString()
+            {
+                return this.Id.ToString();
+            }
         }
     }
 }

@@ -324,20 +324,20 @@ namespace deepequalitycomparer
                 return;
             }
 
-            if (HasTypeSpecificEuquals(x)) {
-                var value = this.AreEqualBySpecificEquals(x, y);
-                if (value) {
-                    context.SetResult(true, "Equals");
-                    return;
-                }
-            }
-
             if (this.IsIEnumerable(x) &&
                 this.IsIEnumerable(y)) {
                 var value = this.AreIEnumerablesEqual(context, x, y);
                 context.SetResult(value, "IEnumerable");
                 return;
             }
+
+            if (HasTypeSpecificEquals(x)) {
+                var value = this.AreEqualBySpecificEquals(x, y);
+                context.SetResult(value, "Equals");
+                return;
+            }
+
+
 
             this.ArePropertiesEqual(context, x, y);
         }
@@ -569,7 +569,7 @@ namespace deepequalitycomparer
                                             x.GetParameters().SingleOrDefault()?.ParameterType);
         }
 
-        private static bool HasTypeSpecificEuquals(object obj)
+        private static bool HasTypeSpecificEquals(object obj)
         {
             var method = GetTypeSpecificEquals(obj);
 
