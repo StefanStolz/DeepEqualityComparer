@@ -47,7 +47,11 @@ namespace deepequalitycomparer.tests
             var collection1 = source.ToImmutableArray();
             var collection2 = source.ToImmutableArray();
 
-            var result = DeepEqualityComparer.Default.Equals(collection1, collection2);
+           var comparer =  DeepEqualityComparer.CreateConfiguration()
+                                               .SetIgnoreIndexer(true)
+                                               .CreateEqualityComparer();
+
+            var result = comparer.Equals(collection1, collection2);
 
             Assert.That(result, Is.True);
         }

@@ -276,6 +276,7 @@ namespace deepequalitycomparer
                 context.SetResult(false, "x == null");
                 return;
             }
+
             if (ReferenceEquals(y, null)) {
                 context.SetResult(false, "y == null");
                 return;
@@ -327,8 +328,14 @@ namespace deepequalitycomparer
             if (this.IsIEnumerable(x) &&
                 this.IsIEnumerable(y)) {
                 var value = this.AreIEnumerablesEqual(context, x, y);
-                context.SetResult(value, "IEnumerable");
-                return;
+                if (!value) {
+                    context.SetResult(value, "IEnumerable");
+                    return;
+                }
+                else {
+                    this.ArePropertiesEqual(context, x, y);
+                    return;
+                }
             }
 
             if (HasTypeSpecificEquals(x)) {
@@ -336,8 +343,6 @@ namespace deepequalitycomparer
                 context.SetResult(value, "Equals");
                 return;
             }
-
-
 
             this.ArePropertiesEqual(context, x, y);
         }
@@ -503,6 +508,7 @@ namespace deepequalitycomparer
                 this.PrintItem(textWriter, item);
                 this.PrintItems(textWriter, item.GetAllChildren());
             }
+
             textWriter.Indent -= 1;
         }
 
