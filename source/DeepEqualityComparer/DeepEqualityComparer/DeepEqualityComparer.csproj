@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net40;netstandard2.0;net35</TargetFrameworks>
-        <Version>2.0.11</Version>
+        <Version>2.1.0</Version>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Authors>StefanStolz</Authors>
         <Company />
@@ -14,6 +14,8 @@
         <PackageProjectUrl>https://github.com/StefanStolz/DeepEqualityComparer</PackageProjectUrl>
         <PackageTags>IEqualityComparer Comparer</PackageTags>
         <PackageReleaseNotes>
+            New in 2.1
+            initial support for Indexer - atm only int-Indexer are supported
 
             New in 2.x
             .NET Standard 2.0 support
@@ -24,8 +26,8 @@
             Ignore Properties by Name
             Ignore Properties by Type
 </PackageReleaseNotes>
-        <AssemblyVersion>2.0.11.0</AssemblyVersion>
-        <FileVersion>2.0.11.0</FileVersion>
+        <AssemblyVersion>2.1.0.0</AssemblyVersion>
+        <FileVersion>2.1.0.0</FileVersion>
     </PropertyGroup>
     <PropertyGroup>
         <IncludeSymbols>true</IncludeSymbols>

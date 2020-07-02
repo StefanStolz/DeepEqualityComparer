@@ -26,6 +26,7 @@
 
 #region using directives
 
+using System.Collections.Generic;
 using System.Collections.Immutable;
 
 using NUnit.Framework;
@@ -47,9 +48,7 @@ namespace deepequalitycomparer.tests
             var collection1 = source.ToImmutableArray();
             var collection2 = source.ToImmutableArray();
 
-           var comparer =  DeepEqualityComparer.CreateConfiguration()
-                                               .SetIgnoreIndexer(true)
-                                               .CreateEqualityComparer();
+            var comparer = DeepEqualityComparer.Default;
 
             var result = comparer.Equals(collection1, collection2);
 

@@ -59,10 +59,20 @@ namespace deepequalitycomparer
             return new Tuple<T1, T2>(item1, item2);
         }
     }
+
+    internal static class Extensions
+    {
+        public static bool HasFlag(this DeepEqualityComparer.ArePropertiesEqualFlags flags, DeepEqualityComparer.ArePropertiesEqualFlags value)
+        {
+            return (flags & value) == value;
+        }
+    }
 #endif
 
     public class DeepEqualityComparer<T> : DeepEqualityComparer, IEqualityComparer<T>
     {
+
+
         public DeepEqualityComparer()
         { }
 
@@ -333,7 +343,7 @@ namespace deepequalitycomparer
                     return;
                 }
                 else {
-                    this.ArePropertiesEqual(context, x, y);
+                    this.ArePropertiesEqual(context, x, y, ArePropertiesEqualFlags.IgnoreIndexer);
                     return;
                 }
             }
@@ -355,11 +365,55 @@ namespace deepequalitycomparer
             return this.AreArraysEqual(context, listX.ToArray(), listY.ToArray());
         }
 
-        private bool AreIndexerEqual(PropertyInfo propertyInfo, object x, object y)
+        private bool AreIndexerEqual(Context context, PropertyInfo propertyInfo, object x, object y)
         {
             if (this.ignoreIndexer) return true;
-            throw new NotSupportedException("Indexers are currently not supported");
+
+            var getMethod = propertyInfo.GetGetMethod();
+            if (getMethod == null) return true;
+
+            var args = getMethod.GetParameters();
+
+            if (args.Length != 1)
+                throw new NotSupportedException($"Only Indexers with one System.Int32 Parameter are supported: Indexer of {propertyInfo.ReflectedType?.FullName} has {args.Length}");
+            if(args[0].ParameterType != typeof(int))
+                throw new NotSupportedException($"Only Indexers with one System.Int32 Parameter are supported: Indexer of {propertyInfo.ReflectedType?.FullName} is of Type {args[0].ParameterType.FullName}");
+
+            var countProperty = propertyInfo.ReflectedType?.GetProperty("Count");
+            if (countProperty == null) {
+                countProperty = propertyInfo.ReflectedType?.GetProperty("Length");
+            }
+            if (countProperty == null) throw new NotSupportedException("No Count or Length Property found; required for Indexers");
+
+
+            var countX = (int)countProperty.GetValue(x, null);
+            var countY = (int)countProperty.GetValue(y, null);
+
+            if (countX != countY) return false;
+
+            var result = true;
+
+            for (int i = 0; i < countX; i++) {
+                var valueX = propertyInfo.GetValue(x, new object[] { i });
+                var valueY = propertyInfo.GetValue(y, new object[] { i });
+
+                var childContext = context.CreateChild($"Indexer: {i}");
+
+                this.AreEqualInternal(childContext, valueX, valueY);
+
+                if (!childContext.Result) result = false;
+            }
+
+            return result;
         }
+
+        [Flags]
+        internal enum ArePropertiesEqualFlags
+        {
+            None,
+            IgnoreIndexer = 0x1
+        }
+ 
 
         /// <summary>
         /// Tests all Properties of the objects for euqality.
@@ -367,7 +421,7 @@ namespace deepequalitycomparer
         /// <param name="context">The Context of the equal operation</param>
         /// <param name="x">The first object</param>
         /// <param name="y">The second object</param>
-        private void ArePropertiesEqual(Context context, object x, object y)
+        private void ArePropertiesEqual(Context context, object x, object y, ArePropertiesEqualFlags flags = ArePropertiesEqualFlags.None)
         {
             if (x.GetType() != y.GetType())
                 throw new ArgumentNullException(nameof(y), "y must have the same type as x");
@@ -386,8 +440,10 @@ namespace deepequalitycomparer
                     this.AreEqualInternal(context.CreateChild(propertyInfo.Name), valueOfX, valueOfY);
                 }
                 else {
-                    if (!this.AreIndexerEqual(propertyInfo, x, y)) {
-                        throw new NotImplementedException();
+                    if(flags.HasFlag(ArePropertiesEqualFlags.IgnoreIndexer)) continue;
+
+                    if (!this.AreIndexerEqual(context, propertyInfo, x, y)) {
+                        context.SetResult(false, "Indexer");
                     }
                 }
             }
