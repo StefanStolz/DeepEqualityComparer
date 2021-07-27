@@ -4,7 +4,7 @@ DeepEqualityComparer checks two objects trees for equality.
 It implements the .NET Framekwork IComparer interface and can be used everywhere where an IComparer
 is accepted.
 
-The primary us is in Unit-Tests.
+It is mainly intended to be used in unit tests.
 
 ## Usage
 
